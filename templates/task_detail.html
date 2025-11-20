@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'tasks' %}" class="breadcrumb">
+            <i class="fas fa-tasks"></i> Tasks
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        <h1 class="page-title" id="task-title">Loading...</h1>
+    </div>
+    <div class="header-actions">
+        <button class="btn btn-secondary" onclick="editTask()">
+            <i class="fas fa-edit"></i> Edit
+        </button>
+        <button class="btn btn-danger" onclick="deleteTask()">
+            <i class="fas fa-trash"></i> Delete
+        </button>
+    </div>
+</div>
+
+<div class="task-detail-container">
+    <!-- Task Info Card -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-info-circle"></i> Task Information</h2>
+        </div>
+        <div class="card-body">
+            <div class="task-info-grid">
+                <div class="info-item">
+                    <span class="info-label">Status:</span>
+                    <span class="status-badge" id="task-status">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Priority:</span>
+                    <span class="priority-badge" id="task-priority">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Due Date:</span>
+                    <span id="task-due-date">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Assigned To:</span>
+                    <span id="task-assigned">-</span>
+                </div>
+            </div>
+            <div class="task-description">
+                <h3>Description</h3>
+                <p id="task-description">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Tracking Widget -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-clock"></i> Time Tracking</h2>
+        </div>
+        <div class="card-body">
+            <div id="time-tracker">
+                <div class="timer-display" id="timer-display">00:00:00</div>
+                <div class="timer-controls">
+                    <button id="start-timer-btn" class="btn btn-success" onclick="startTimer()">
+                        <i class="fas fa-play"></i> Start Timer
+                    </button>
+                    <button id="stop-timer-btn" class="btn btn-danger" onclick="stopTimer()" style="display: none;">
+                        <i class="fas fa-stop"></i> Stop Timer
+                    </button>
+                </div>
+                <div id="time-logs" class="time-logs">
+                    <h4>Time Logs</h4>
+                    <div id="time-logs-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attachments Section -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-paperclip"></i> Attachments (<span id="attachments-count">0</span>)</h2>
+            <button class="btn btn-primary btn-sm" onclick="openUploadDialog()">
+                <i class="fas fa-upload"></i> Upload File
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="attachments-list" class="attachments-grid">
+                <!-- Attachments will be loaded here -->
+            </div>
+            <div id="attachments-empty" class="empty-state" style="display: none;">
+                <i class="fas fa-paperclip"></i>
+                <p>No attachments yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-comments"></i> Comments (<span id="comments-count">0</span>)</h2>
+        </div>
+        <div class="card-body">
+            <div class="comment-form">
+                <textarea id="comment-input" class="form-input" rows="3" placeholder="Add a comment... (Use @username to mention someone)"></textarea>
+                <div class="comment-actions">
+                    <button class="btn btn-primary" onclick="submitComment()">
+                        <i class="fas fa-paper-plane"></i> Post Comment
+                    </button>
+                </div>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <!-- Comments will be loaded here -->
+            </div>
+            <div id="comments-empty" class="empty-state" style="display: none;">
+                <i class="fas fa-comments"></i>
+                <p>No comments yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Dialog -->
+<div id="upload-dialog" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Upload File</h3>
+            <button class="modal-close" onclick="closeUploadDialog()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="upload-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file-input">Choose File</label>
+                    <input type="file" id="file-input" name="file" class="form-input" accept=".png,.jpg,.jpeg,.pdf,.txt,.docx,.doc,.zip" required>
+                    <small class="form-hint">Max 10MB. Allowed: PNG, JPG, PDF, TXT, DOCX, DOC, ZIP</small>
+                </div>
+                <div id="file-preview" class="file-preview" style="display: none;">
+                    <i class="fas fa-file"></i>
+                    <span id="file-name"></span>
+                    <span id="file-size"></span>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeUploadDialog()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitUpload()">
+                <i class="fas fa-upload"></i> Upload
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/task-detail.js' %}?v=20251115"></script>
+{% endblock %}

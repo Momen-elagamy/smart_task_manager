@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-user-shield"></i> Security Settings</h1>
+</div>
+
+<div class="settings-container">
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-lock"></i> Two-Factor Authentication (2FA)</h2>
+        </div>
+        <div class="card-body">
+            <div id="2fa-disabled" style="display: none;">
+                <p class="text-muted mb-4">
+                    Two-factor authentication adds an extra layer of security to your account. 
+                    When enabled, you'll need to enter a code from your authenticator app along with your password.
+                </p>
+                
+                <button class="btn btn-primary" onclick="enable2FA()">
+                    <i class="fas fa-shield-alt"></i> Enable 2FA
+                </button>
+            </div>
+            
+            <div id="2fa-setup" style="display: none;">
+                <div class="setup-steps">
+                    <h3>Setup Steps:</h3>
+                    <ol>
+                        <li>Install an authenticator app (Google Authenticator, Authy, etc.)</li>
+                        <li>Scan the QR code below with your app</li>
+                        <li>Enter the 6-digit code to verify</li>
+                    </ol>
+                </div>
+                
+                <div class="qr-code-container">
+                    <div id="qr-code"></div>
+                    <p class="secret-key">
+                        <strong>Manual Entry Key:</strong><br>
+                        <code id="secret-key"></code>
+                    </p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="verification-code">Enter 6-Digit Code</label>
+                    <input type="text" id="verification-code" class="form-input" maxlength="6" placeholder="000000">
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="cancel2FASetup()">Cancel</button>
+                    <button class="btn btn-success" onclick="verify2FA()">
+                        <i class="fas fa-check"></i> Verify & Enable
+                    </button>
+                </div>
+            </div>
+            
+            <div id="2fa-enabled" style="display: none;">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    Two-factor authentication is <strong>enabled</strong>
+                </div>
+                
+                <div class="backup-codes-section">
+                    <h3>Backup Codes</h3>
+                    <p class="text-muted">Save these backup codes in a safe place. You can use them to access your account if you lose your authenticator device.</p>
+                    
+                    <div id="backup-codes" class="backup-codes">
+                        <!-- Backup codes will be displayed here -->
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="regenerateBackupCodes()">
+                        <i class="fas fa-sync"></i> Regenerate Backup Codes
+                    </button>
+                </div>
+                
+                <hr>
+                
+                <button class="btn btn-danger" onclick="disable2FA()">
+                    <i class="fas fa-shield-alt"></i> Disable 2FA
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-key"></i> Change Password</h2>
+        </div>
+        <div class="card-body">
+            <form id="password-form">
+                <div class="form-group">
+                    <label for="current-password">Current Password</label>
+                    <input type="password" id="current-password" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <input type="password" id="confirm-password" class="form-input" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Change Password
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    await check2FAStatus();
+});
+
+async function check2FAStatus() {
+    // Since 2FA is not implemented in backend, show disabled state
+    document.getElementById('2fa-disabled').style.display = 'block';
+    document.getElementById('2fa-setup').style.display = 'none';
+    document.getElementById('2fa-enabled').style.display = 'none';
+}
+
+function enable2FA() {
+    // Mock implementation - show setup UI
+    alert('2FA Backend Not Implemented Yet\n\nThis is a UI mockup showing what the 2FA setup would look like. To fully implement:\n\n1. Add django-otp or pyotp to backend\n2. Create TOTP secret generation endpoint\n3. Create verification endpoint\n4. Store 2FA status in user model');
+    
+    // Show setup UI
+    document.getElementById('2fa-disabled').style.display = 'none';
+    document.getElementById('2fa-setup').style.display = 'block';
+    
+    // Generate mock QR code
+    const mockSecret = 'JBSWY3DPEHPK3PXP';
+    document.getElementById('secret-key').textContent = mockSecret;
+    
+    const qrData = `otpauth://totp/SmartTaskManager:user@example.com?secret=${mockSecret}&issuer=SmartTaskManager`;
+    
+    document.getElementById('qr-code').innerHTML = '';
+    new QRCode(document.getElementById('qr-code'), {
+        text: qrData,
+        width: 200,
+        height: 200,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+    });
+}
+
+function cancel2FASetup() {
+    document.getElementById('2fa-disabled').style.display = 'block';
+    document.getElementById('2fa-setup').style.display = 'none';
+}
+
+function verify2FA() {
+    const code = document.getElementById('verification-code').value;
+    
+    if (code.length !== 6) {
+        alert('Please enter a 6-digit code');
+        return;
+    }
+    
+    // Mock verification
+    alert('2FA Backend Not Implemented\n\nIn production, this would verify the TOTP code against the secret.');
+    
+    // Show enabled state with mock backup codes
+    document.getElementById('2fa-setup').style.display = 'none';
+    document.getElementById('2fa-enabled').style.display = 'block';
+    
+    const mockBackupCodes = [
+        '1234-5678-90AB',
+        'CDEF-1234-5678',
+        '90AB-CDEF-1234',
+        '5678-90AB-CDEF',
+        '1234-CDEF-5678',
+        '90AB-1234-CDEF'
+    ];
+    
+    document.getElementById('backup-codes').innerHTML = mockBackupCodes.map(code => 
+        `<div class="backup-code"><code>${code}</code></div>`
+    ).join('');
+}
+
+function regenerateBackupCodes() {
+    if (!confirm('Are you sure you want to regenerate backup codes? Your old codes will no longer work.')) {
+        return;
+    }
+    
+    alert('2FA Backend Not Implemented\n\nIn production, this would generate new backup codes.');
+}
+
+function disable2FA() {
+    if (!confirm('Are you sure you want to disable two-factor authentication? Your account will be less secure.')) {
+        return;
+    }
+    
+    alert('2FA Backend Not Implemented\n\nIn production, this would disable 2FA for your account.');
+    
+    document.getElementById('2fa-enabled').style.display = 'none';
+    document.getElementById('2fa-disabled').style.display = 'block';
+}
+
+document.getElementById('password-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        alert('Password must be at least 8 characters long');
+        return;
+    }
+    
+    try {
+        await window.API.client.post('/api/users/change-password/', {
+            current_password: currentPassword,
+            new_password: newPassword
+        });
+        
+        alert('Password changed successfully!');
+        this.reset();
+        
+    } catch (error) {
+        console.error('Error changing password:', error);
+        alert(error.response?.data?.error || 'Failed to change password');
+    }
+});
+</script>
+
+<style>
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.setup-steps {
+    margin-bottom: 24px;
+}
+
+.setup-steps ol {
+    padding-left: 20px;
+}
+
+.setup-steps li {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+}
+
+.qr-code-container {
+    text-align: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+#qr-code {
+    display: inline-block;
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.secret-key {
+    margin-top: 16px;
+    color: var(--text-muted);
+}
+
+.secret-key code {
+    display: inline-block;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--accent-cyan);
+    letter-spacing: 2px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.backup-codes-section {
+    margin: 24px 0;
+}
+
+.backup-codes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.backup-code {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.backup-code code {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    letter-spacing: 1px;
+}
+
+.alert-success {
+    padding: 16px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    color: #10B981;
+    margin-bottom: 24px;
+}
+
+.alert-success i {
+    margin-right: 8px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends "dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title" id="page-title">Create New Task</h1>
+    <div class="header-actions">
+        <a href="{% url 'tasks' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Tasks
+        </a>
+    </div>
+</div>
+
+<div class="form-container-card">
+    <form id="task-form">
+        <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+        <div id="success-message" class="alert alert-success" style="display: none;"></div>
+
+        <input type="hidden" id="task-id" value="{{ task.id|default:'' }}">
+
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" class="form-input" placeholder="Enter task title" value="{{ task.title|default:'' }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-input" rows="4" placeholder="Enter task description">{{ task.description|default:'' }}</textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority" class="form-input" required>
+                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if task.priority == 'medium' or not task %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>High</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-input" required>
+                    <option value="pending" {% if task.status == 'pending' or not task %}selected{% endif %}>Pending</option>
+                    <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="project">Project</label>
+            <select id="project" name="project" class="form-input">
+                <option value="">No Project</option>
+                <!-- Projects will be loaded here by JavaScript -->
+            </select>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="due_date">Due Date</label>
+                <input type="date" id="due_date" name="due_date" class="form-input" value="{{ task.due_date|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="depends_on">Depends On (Blocking Task)</label>
+                <select id="depends_on" name="depends_on" class="form-input">
+                    <option value="">No Dependencies</option>
+                    <!-- Tasks will be loaded here by JavaScript -->
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="tags">Tags</label>
+            <div class="tags-input-container">
+                <input type="text" id="tags-input" class="form-input" placeholder="Type to search tags...">
+                <div id="tags-suggestions" class="tags-suggestions" style="display: none;"></div>
+                <div id="selected-tags" class="selected-tags"></div>
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <button type="submit" class="btn btn-primary" id="submit-button">
+                <i class="fas fa-save"></i> Save Task
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/api.js' %}"></script>
+<script>
+let selectedTags = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = "{% url 'login' %}";
+        return;
+    }
+    window.API.client.setToken(token);
+
+    const taskId = document.getElementById('task-id').value;
+    if (taskId) {
+        document.getElementById('page-title').textContent = 'Edit Task';
+        document.getElementById('submit-button').innerHTML = '<i class="fas fa-save"></i> Update Task';
+    }
+
+    // Load projects
+    await loadProjects();
+    
+    // Load tasks for dependencies
+    await loadTasksForDependencies();
+    
+    // Setup tags autocomplete
+    setupTagsAutocomplete();
+    
+    // Load task data if editing
+    if (taskId) {
+        await loadTaskData(taskId);
+    }
+
+    document.getElementById('task-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await submitTask();
+    });
+});
+
+async function loadProjects() {
+    try {
+        const response = await window.API.client.get('/api/projects/');
+        const projects = Array.isArray(response) ? response : response.results || [];
+        
+        const select = document.getElementById('project');
+        projects.forEach(p => {
+            const option = new Option(p.name, p.id);
+            select.add(option);
+        });
+    } catch (error) {
+        console.error('Error loading projects:', error);
+    }
+}
+
+async function loadTasksForDependencies() {
+    try {
+        const response = await window.API.client.get('/api/tasks/');
+        const tasks = Array.isArray(response) ? response : response.results || [];
+        
+        const select = document.getElementById('depends_on');
+        tasks.forEach(t => {
+            const option = new Option(t.title, t.id);
+            select.add(option);
+        });
+    } catch (error) {
+        console.error('Error loading tasks:', error);
+    }
+}
+
+function setupTagsAutocomplete() {
+    const input = document.getElementById('tags-input');
+    const suggestions = document.getElementById('tags-suggestions');
+    
+    let debounceTimer;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+        
+        if (query.length < 1) {
+            suggestions.style.display = 'none';
+            return;
+        }
+        
+        debounceTimer = setTimeout(async () => {
+            await searchTags(query);
+        }, 300);
+    });
+    
+    input.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+            searchTags(this.value.trim());
+        }
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+            suggestions.style.display = 'none';
+        }
+    });
+}
+
+async function searchTags(query) {
+    try {
+        const response = await window.API.client.get(`/api/tags/search/?q=${encodeURIComponent(query)}`);
+        const tags = Array.isArray(response) ? response : response.results || [];
+        
+        const suggestions = document.getElementById('tags-suggestions');
+        
+        if (tags.length === 0) {
+            suggestions.innerHTML = `
+                <div class="tag-suggestion" onclick="createNewTag('${query}')">
+                    <i class="fas fa-plus"></i> Create new tag "${query}"
+                </div>
+            `;
+        } else {
+            suggestions.innerHTML = tags.map(tag => `
+                <div class="tag-suggestion" onclick="selectTag(${tag.id}, '${tag.name}', '${tag.color}')">
+                    <span class="tag-color-dot" style="background: ${tag.color}"></span>
+                    ${tag.name}
+                </div>
+            `).join('');
+        }
+        
+        suggestions.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error searching tags:', error);
+    }
+}
+
+function selectTag(id, name, color) {
+    if (selectedTags.find(t => t.id === id)) {
+        return; // Already selected
+    }
+    
+    selectedTags.push({ id, name, color });
+    renderSelectedTags();
+    
+    document.getElementById('tags-input').value = '';
+    document.getElementById('tags-suggestions').style.display = 'none';
+}
+
+async function createNewTag(name) {
+    try {
+        const tag = await window.API.client.post('/api/tags/', {
+            name: name,
+            color: '#06B6D4'
+        });
+        
+        selectTag(tag.id, tag.name, tag.color);
+        
+    } catch (error) {
+        console.error('Error creating tag:', error);
+        alert('Failed to create tag');
+    }
+}
+
+function removeTag(id) {
+    selectedTags = selectedTags.filter(t => t.id !== id);
+    renderSelectedTags();
+}
+
+function renderSelectedTags() {
+    const container = document.getElementById('selected-tags');
+    
+    if (selectedTags.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = selectedTags.map(tag => `
+        <span class="tag-chip" style="border-color: ${tag.color}; color: ${tag.color}">
+            ${tag.name}
+            <button type="button" class="tag-remove" onclick="removeTag(${tag.id})">
+                <i class="fas fa-times"></i>
+            </button>
+        </span>
+    `).join('');
+}
+
+async function loadTaskData(taskId) {
+    try {
+        const task = await window.API.client.get(`/api/tasks/${taskId}/`);
+        
+        document.getElementById('title').value = task.title;
+        document.getElementById('description').value = task.description || '';
+        document.getElementById('priority').value = task.priority;
+        document.getElementById('status').value = task.status;
+        document.getElementById('project').value = task.project || '';
+        document.getElementById('due_date').value = task.due_date || '';
+        document.getElementById('depends_on').value = task.depends_on || '';
+        
+        // Load tags
+        if (task.tags && task.tags.length > 0) {
+            selectedTags = task.tags.map(t => ({ id: t.id, name: t.name, color: t.color }));
+            renderSelectedTags();
+        }
+        
+    } catch (error) {
+        console.error('Error loading task:', error);
+        alert('Failed to load task data');
+    }
+}
+
+async function submitTask() {
+    const taskId = document.getElementById('task-id').value;
+    
+    const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        priority: document.getElementById('priority').value,
+        status: document.getElementById('status').value,
+        project: document.getElementById('project').value || null,
+        due_date: document.getElementById('due_date').value || null,
+        depends_on: document.getElementById('depends_on').value || null,
+        tag_ids: selectedTags.map(t => t.id)
+    };
+    
+    try {
+        if (taskId) {
+            await window.API.client.put(`/api/tasks/${taskId}/`, data);
+            alert('Task updated successfully!');
+        } else {
+            await window.API.client.post('/api/tasks/', data);
+            alert('Task created successfully!');
+        }
+        
+        window.location.href = '/tasks/';
+        
+    } catch (error) {
+        console.error('Error saving task:', error);
+        alert('Failed to save task');
+    }
+}
+
+
+    document.getElementById('task-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        if (!data.project) delete data.project; // Handle no project case
+
+        try {
+            if (taskId) {
+                await window.API.tasks.update(taskId, data);
+            } else {
+                await window.API.tasks.create(data);
+            }
+            window.location.href = "{% url 'tasks' %}";
+        } catch (error) {
+            console.error('Error saving task:', error);
+            document.getElementById('error-message').textContent = 'Failed to save task. Please check the details and try again.';
+            document.getElementById('error-message').style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %}

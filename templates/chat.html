@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Chat - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block main_content %}
+    <div class="chat-layout">
+        <!-- Chat Sidebar -->
+        <aside class="chat-sidebar open" id="chat-sidebar">
+            <div class="chat-sidebar-header">
+                <h3>Conversations</h3>
+                <button class="icon-button-small" id="new-conversation-btn" title="New Conversation">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="conversations-list" id="conversations-list">
+                <div class="conversation-item active" data-conversation-id="1">
+                    <div class="conversation-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="conversation-info">
+                        <h4>Project Planning Discussion</h4>
+                        <p>2 hours ago</p>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="conversation-delete-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="conversation-item" data-conversation-id="2">
+                    <div class="conversation-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="conversation-info">
+                        <h4>Productivity Tips</h4>
+                        <p>Yesterday</p>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="conversation-delete-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="conversation-item" data-conversation-id="3">
+                    <div class="conversation-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="conversation-info">
+                        <h4>Task Management Strategy</h4>
+                        <p>2 days ago</p>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="conversation-delete-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="conversation-item" data-conversation-id="4">
+                    <div class="conversation-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="conversation-info">
+                        <h4>Team Collaboration</h4>
+                        <p>3 days ago</p>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="conversation-delete-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="conversation-item" data-conversation-id="5">
+                    <div class="conversation-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="conversation-info">
+                        <h4>Progress Review</h4>
+                        <p>1 week ago</p>
+                    </div>
+                    <div class="conversation-actions">
+                        <button class="conversation-delete-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    {% with display_name=request.user.get_full_name|default:request.user.email %}
+                    <div class="user-avatar">
+                        <span class="avatar-initial">{{ display_name|slice:":1"|upper }}</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">{{ display_name }}</span>
+                        <span class="user-status">{% if request.user.is_authenticated %}Online{% else %}Offline{% endif %}</span>
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <div class="chat-main" id="chat-main">
+            <div class="chat-header-area">
+                <button class="icon-button toggle-sidebar-btn" id="toggle-sidebar-btn" title="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="chat-ai-info">
+                    <div class="ai-avatar-large">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <h2>S T manger Assistant</h2>
+                        <p class="ai-status">
+                            <span class="status-dot"></span>
+                            Online & Ready to Help
+                        </p>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="icon-button" id="clear-chat-btn" title="Clear Chat">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                    <button class="icon-button" id="export-chat-btn" title="Export Chat">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="icon-button" id="settings-btn" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-messages-area" id="chat-messages">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>Welcome to S T manger Assistant!</h3>
+                    <p>I'm here to help you with project planning, task management, productivity tips, and much more.</p>
+
+                    <div class="quick-suggestions">
+                        <button class="suggestion-card" onclick="sendQuickMessage('Help me plan a new project')">
+                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #06b6d4, #ec4899);">
+                                <i class="fas fa-project-diagram"></i>
+                            </div>
+                            <h4>Project Planning</h4>
+                            <p>Get help planning your next project</p>
+                        </button>
+
+                        <button class="suggestion-card" onclick="sendQuickMessage('How can I improve my productivity?')">
+                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <h4>Productivity Tips</h4>
+                            <p>Learn ways to be more productive</p>
+                        </button>
+
+                        <button class="suggestion-card" onclick="sendQuickMessage('Help me organize my tasks')">
+                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <h4>Task Organization</h4>
+                            <p>Get help organizing your tasks</p>
+                        </button>
+
+                        <button class="suggestion-card" onclick="sendQuickMessage('What are the best team management practices?')">
+                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #f97316, #ef4444);">
+                                <i class="fas fa-users-cog"></i>
+                            </div>
+                            <h4>Team Management</h4>
+                            <p>Learn team management best practices</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">AI is thinking...</span>
+                </div>
+
+                <form class="chat-input-form" id="chat-form">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="chat-input" 
+                            class="chat-input" 
+                            placeholder="Ask me anything about tasks, projects, or productivity..."
+                            rows="1"
+                        ></textarea>
+                        <button type="submit" class="send-button" id="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+{% endblock %}
+
+{% block page_scripts %}
+{{ block.super }}
+    <script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}

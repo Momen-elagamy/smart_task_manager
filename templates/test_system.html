@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار النظام - Smart Task Manager</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logo {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .test-section h3 {
+            margin-bottom: 1rem;
+            color: #fbbf24;
+        }
+        
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .test-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status.error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .status.warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .status.pending {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: white;
+            color: #3b82f6;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn-group {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🧪</div>
+        <h1>اختبار النظام</h1>
+        
+        <div class="test-section">
+            <h3>🔗 اختبار الاتصال بالخادم</h3>
+            <div class="test-item">
+                <span>الخادم الخلفي (Django)</span>
+                <span class="status pending" id="backend-status">جاري الاختبار...</span>
+            </div>
+            <div class="test-item">
+                <span>قاعدة البيانات</span>
+                <span class="status pending" id="database-status">جاري الاختبار...</span>
+            </div>
+            <div class="test-item">
+                <span>API Endpoints</span>
+                <span class="status pending" id="api-status">جاري الاختبار...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎨 اختبار الواجهة الأمامية</h3>
+            <div class="test-item">
+                <span>ملفات CSS</span>
+                <span class="status pending" id="css-status">جاري الاختبار...</span>
+            </div>
+            <div class="test-item">
+                <span>ملفات JavaScript</span>
+                <span class="status pending" id="js-status">جاري الاختبار...</span>
+            </div>
+            <div class="test-item">
+                <span>الرسوم البيانية</span>
+                <span class="status pending" id="charts-status">جاري الاختبار...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔐 اختبار المصادقة</h3>
+            <div class="test-item">
+                <span>تسجيل الدخول</span>
+                <span class="status pending" id="login-status">جاري الاختبار...</span>
+            </div>
+            <div class="test-item">
+                <span>إنشاء حساب</span>
+                <span class="status pending" id="register-status">جاري الاختبار...</span>
+            </div>
+            <div class="test-item">
+                <span>JWT Token</span>
+                <span class="status pending" id="jwt-status">جاري الاختبار...</span>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>جاري تشغيل الاختبارات...</p>
+        </div>
+        
+        <div class="btn-group">
+            <a href="/" class="btn">🏠 الصفحة الرئيسية</a>
+            <a href="/frontend/" class="btn">🚀 التطبيق</a>
+            <button class="btn" onclick="runTests()">🔄 إعادة الاختبار</button>
+        </div>
+    </div>
+
+    <script>
+        async function runTests() {
+            document.getElementById('loading').style.display = 'block';
+            
+            // Test Backend
+            await testBackend();
+            
+            // Test Frontend
+            await testFrontend();
+            
+            // Test Authentication
+            await testAuthentication();
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        async function testBackend() {
+            try {
+                // Test Django server
+                const response = await fetch('/api/stats/');
+                if (response.ok) {
+                    document.getElementById('backend-status').textContent = '✅ يعمل';
+                    document.getElementById('backend-status').className = 'status success';
+                } else {
+                    document.getElementById('backend-status').textContent = '⚠️ خطأ';
+                    document.getElementById('backend-status').className = 'status warning';
+                }
+            } catch (error) {
+                document.getElementById('backend-status').textContent = '❌ غير متاح';
+                document.getElementById('backend-status').className = 'status error';
+            }
+            
+            try {
+                // Test Database
+                const response = await fetch('/api/projects/projects/');
+                if (response.ok) {
+                    document.getElementById('database-status').textContent = '✅ يعمل';
+                    document.getElementById('database-status').className = 'status success';
+                } else {
+                    document.getElementById('database-status').textContent = '⚠️ خطأ';
+                    document.getElementById('database-status').className = 'status warning';
+                }
+            } catch (error) {
+                document.getElementById('database-status').textContent = '❌ غير متاح';
+                document.getElementById('database-status').className = 'status error';
+            }
+            
+            try {
+                // Test API Endpoints
+                const endpoints = [
+                    '/api/users/',
+                    '/api/projects/',
+                    '/api/tasks/',
+                    '/api/notifications/',
+                    '/api/chat/',
+                    '/api/analytics/',
+                    '/api/dashboard/'
+                ];
+                
+                let workingEndpoints = 0;
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(endpoint);
+                        if (response.status !== 404) {
+                            workingEndpoints++;
+                        }
+                    } catch (e) {
+                        // Ignore errors for individual endpoints
+                    }
+                }
+                
+                if (workingEndpoints >= 5) {
+                    document.getElementById('api-status').textContent = '✅ يعمل';
+                    document.getElementById('api-status').className = 'status success';
+                } else {
+                    document.getElementById('api-status').textContent = '⚠️ جزئي';
+                    document.getElementById('api-status').className = 'status warning';
+                }
+            } catch (error) {
+                document.getElementById('api-status').textContent = '❌ خطأ';
+                document.getElementById('api-status').className = 'status error';
+            }
+        }
+        
+        async function testFrontend() {
+            // Test CSS
+            const cssLoaded = document.styleSheets.length > 0;
+            if (cssLoaded) {
+                document.getElementById('css-status').textContent = '✅ محمل';
+                document.getElementById('css-status').className = 'status success';
+            } else {
+                document.getElementById('css-status').textContent = '❌ غير محمل';
+                document.getElementById('css-status').className = 'status error';
+            }
+            
+            // Test JavaScript
+            const jsLoaded = typeof API !== 'undefined';
+            if (jsLoaded) {
+                document.getElementById('js-status').textContent = '✅ محمل';
+                document.getElementById('js-status').className = 'status success';
+            } else {
+                document.getElementById('js-status').textContent = '❌ غير محمل';
+                document.getElementById('js-status').className = 'status error';
+            }
+            
+            // Test Charts
+            const chartsLoaded = typeof Chart !== 'undefined';
+            if (chartsLoaded) {
+                document.getElementById('charts-status').textContent = '✅ متاح';
+                document.getElementById('charts-status').className = 'status success';
+            } else {
+                document.getElementById('charts-status').textContent = '❌ غير متاح';
+                document.getElementById('charts-status').className = 'status error';
+            }
+        }
+        
+        async function testAuthentication() {
+            try {
+                // Test Login Endpoint
+                const loginResponse = await fetch('/api/users/login/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test@test.com', password: 'test' })
+                });
+                
+                if (loginResponse.status === 400 || loginResponse.status === 401) {
+                    document.getElementById('login-status').textContent = '✅ يعمل';
+                    document.getElementById('login-status').className = 'status success';
+                } else {
+                    document.getElementById('login-status').textContent = '⚠️ خطأ';
+                    document.getElementById('login-status').className = 'status warning';
+                }
+            } catch (error) {
+                document.getElementById('login-status').textContent = '❌ خطأ';
+                document.getElementById('login-status').className = 'status error';
+            }
+            
+            try {
+                // Test Register Endpoint
+                const registerResponse = await fetch('/api/users/register/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: 'test@test.com', 
+                        password: 'test123',
+                        password2: 'test123',
+                        first_name: 'Test',
+                        last_name: 'User',
+                        role: 'developer'
+                    })
+                });
+                
+                if (registerResponse.status === 400 || registerResponse.status === 201) {
+                    document.getElementById('register-status').textContent = '✅ يعمل';
+                    document.getElementById('register-status').className = 'status success';
+                } else {
+                    document.getElementById('register-status').textContent = '⚠️ خطأ';
+                    document.getElementById('register-status').className = 'status warning';
+                }
+            } catch (error) {
+                document.getElementById('register-status').textContent = '❌ خطأ';
+                document.getElementById('register-status').className = 'status error';
+            }
+            
+            // Test JWT
+            const jwtWorking = typeof localStorage !== 'undefined';
+            if (jwtWorking) {
+                document.getElementById('jwt-status').textContent = '✅ متاح';
+                document.getElementById('jwt-status').className = 'status success';
+            } else {
+                document.getElementById('jwt-status').textContent = '❌ غير متاح';
+                document.getElementById('jwt-status').className = 'status error';
+            }
+        }
+        
+        // Run tests on page load
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

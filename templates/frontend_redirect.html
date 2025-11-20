@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>انتقال إلى التطبيق - Smart Task Manager</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .btn {
+            display: inline-block;
+            background: white;
+            color: #3b82f6;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .countdown {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h1>Smart Task Manager</h1>
+        <p>جاري الانتقال إلى التطبيق...</p>
+        
+        <div class="spinner"></div>
+        
+        <div class="countdown" id="countdown">3</div>
+        
+        <p>سيتم توجيهك تلقائياً إلى التطبيق</p>
+        
+        <a href="/frontend/" class="btn" id="manual-link" style="display: none;">
+            <i class="fas fa-rocket"></i>
+            انتقل الآن
+        </a>
+    </div>
+
+    <script>
+        let count = 3;
+        const countdownElement = document.getElementById('countdown');
+        const manualLink = document.getElementById('manual-link');
+        
+        const timer = setInterval(() => {
+            count--;
+            countdownElement.textContent = count;
+            
+            if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = '/frontend/';
+            }
+        }, 1000);
+        
+        // إظهار الرابط اليدوي بعد ثانيتين
+        setTimeout(() => {
+            manualLink.style.display = 'inline-block';
+        }, 2000);
+    </script>
+</body>
+</html>
