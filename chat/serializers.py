@@ -1,10 +1,26 @@
 from rest_framework import serializers
 from .models import ChatRoom, ChatMessage, MessageReaction, ChatNotification
 
+
+def display_name(user):
+    """Safe display name for CustomUser even if get_full_name is not defined."""
+    if not user:
+        return ''
+    first = getattr(user, 'first_name', '') or ''
+    last = getattr(user, 'last_name', '') or ''
+    name = (first + ' ' + last).strip()
+    if name:
+        return name
+    email = getattr(user, 'email', '') or ''
+    if email:
+        return email
+    username = getattr(user, 'username', '') or ''
+    return username or 'Member'
+
 class ChatRoomSerializer(serializers.ModelSerializer):
     """سيرياليزر غرف الدردشة"""
     created_by_email = serializers.CharField(source='created_by.email', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    created_by_name = serializers.SerializerMethodField()
     members_count = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
@@ -20,13 +36,16 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     
     def get_members_count(self, obj):
         return obj.members.count()
+
+    def get_created_by_name(self, obj):
+        return display_name(obj.created_by)
     
     def get_last_message(self, obj):
         last_msg = obj.chatmessage_set.filter(is_deleted=False).first()
         if last_msg:
             return {
                 'content': last_msg.content[:100] + '...' if len(last_msg.content) > 100 else last_msg.content,
-                'sender': last_msg.sender.get_full_name(),
+                'sender': display_name(last_msg.sender),
                 'created_at': last_msg.created_at
             }
         return None
@@ -53,10 +72,11 @@ class MessageReactionSerializer(serializers.ModelSerializer):
 
 class ChatMessageSerializer(serializers.ModelSerializer):
     """سيرياليزر رسائل الدردشة"""
+    sender = serializers.SerializerMethodField()
     sender_email = serializers.CharField(source='sender.email', read_only=True)
-    sender_name = serializers.CharField(source='sender.get_full_name', read_only=True)
+    sender_name = serializers.SerializerMethodField()
     reply_to_content = serializers.CharField(source='reply_to.content', read_only=True)
-    reply_to_sender = serializers.CharField(source='reply_to.sender.get_full_name', read_only=True)
+    reply_to_sender = serializers.SerializerMethodField()
     reactions = MessageReactionSerializer(many=True, read_only=True)
     reactions_summary = serializers.SerializerMethodField()
     attachment_url = serializers.SerializerMethodField()
@@ -71,6 +91,21 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     
+    def get_sender(self, obj):
+        sender = obj.sender
+        return {
+            'id': sender.id,
+            'first_name': sender.first_name or '',
+            'last_name': sender.last_name or '',
+            'email': sender.email or '',
+        }
+
+    def get_sender_name(self, obj):
+        return display_name(obj.sender)
+
+    def get_reply_to_sender(self, obj):
+        return display_name(getattr(obj.reply_to, 'sender', None))
+
     def get_reactions_summary(self, obj):
         """ملخص التفاعلات"""
         reactions = obj.messagereaction_set.all()

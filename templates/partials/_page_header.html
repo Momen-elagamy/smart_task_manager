@@ -1,0 +1,17 @@
+{# Reusable page header partial #}
+<header class="page-header">
+  <div class="header-left">
+    <div class="header-icon">
+      {{ header_icon|safe }}
+    </div>
+    <div>
+      <h1>{{ header_title }}</h1>
+      {% if header_subtitle %}<p>{{ header_subtitle }}</p>{% endif %}
+    </div>
+  </div>
+  {% if header_actions %}
+  <div class="header-right">
+    {{ header_actions|safe }}
+  </div>
+  {% endif %}
+</header>

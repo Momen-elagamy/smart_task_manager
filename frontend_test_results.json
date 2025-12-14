@@ -1,0 +1,435 @@
+{
+  "timestamp": "2025-11-23 17:41:20",
+  "base_url": "http://127.0.0.1:8000",
+  "tests": {
+    "pages": [
+      {
+        "test": "Login Page Load",
+        "status": "PASS",
+        "details": "Page loaded successfully",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Register Page Load",
+        "status": "PASS",
+        "details": "Page loaded successfully",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Dashboard Page Load",
+        "status": "PASS",
+        "details": "Dashboard loaded successfully",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Tasks Page Load",
+        "status": "FAIL",
+        "details": "",
+        "error": "Status code: 404",
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Projects Page Load",
+        "status": "FAIL",
+        "details": "",
+        "error": "Status code: 404",
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Chat Page Load",
+        "status": "FAIL",
+        "details": "",
+        "error": "Status code: 500",
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Analytics Page Load",
+        "status": "FAIL",
+        "details": "",
+        "error": "Status code: 404",
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Profile Page Load",
+        "status": "FAIL",
+        "details": "",
+        "error": "Status code: 404",
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Settings Page Load",
+        "status": "FAIL",
+        "details": "",
+        "error": "Status code: 404",
+        "timestamp": "2025-11-23 17:41:20"
+      }
+    ],
+    "buttons": [
+      {
+        "test": "Login Submit Button",
+        "status": "PASS",
+        "details": "Button text: Sign In",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Sign Up Link",
+        "status": "PASS",
+        "details": "Link: /register/",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Forgot Password Link",
+        "status": "PASS",
+        "details": "Link: #",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Register Submit Button",
+        "status": "PASS",
+        "details": "Button text: Create Account",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: filter-btn",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: refresh-btn",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: new-task-btn",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: create-task-btn",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: update-task-btn",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: unnamed",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: mark-all-read-btn",
+        "status": "WARN",
+        "details": "Button may lack handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Button: close-notifications-btn",
+        "status": "PASS",
+        "details": "Button has handler",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      }
+    ],
+    "forms": [
+      {
+        "test": "Login Form Found",
+        "status": "PASS",
+        "details": "Login form found on page",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Email Input Field",
+        "status": "PASS",
+        "details": "Found with placeholder: Enter your email",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Password Input Field",
+        "status": "PASS",
+        "details": "Password input field found",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Register Form Found",
+        "status": "PASS",
+        "details": "Registration form found",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Field: name",
+        "status": "PASS",
+        "details": "Input type: text",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Field: email",
+        "status": "PASS",
+        "details": "Input type: email",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Field: password",
+        "status": "PASS",
+        "details": "Input type: password",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Field: password_confirm",
+        "status": "PASS",
+        "details": "Input type: password",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Dashboard Header",
+        "status": "PASS",
+        "details": "Page header found",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Dashboard Buttons",
+        "status": "PASS",
+        "details": "Found 20 buttons",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Task Grid Container",
+        "status": "PASS",
+        "details": "Task grid found",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      }
+    ],
+    "api_calls": [
+      {
+        "test": "GET /api/tasks/",
+        "status": "PASS",
+        "details": "Status: 401",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "GET /api/projects/",
+        "status": "FAIL",
+        "details": "Status: 404",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "GET /api/users/profile/",
+        "status": "PASS",
+        "details": "Status: 401",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "GET /api/token/",
+        "status": "FAIL",
+        "details": "Status: 405",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      }
+    ],
+    "interactive_elements": [
+      {
+        "test": "Modal Windows",
+        "status": "PASS",
+        "details": "Found 4 modal elements",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Dropdown Elements",
+        "status": "PASS",
+        "details": "Found 10 dropdowns",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Tab Controls",
+        "status": "PASS",
+        "details": "Found 5 tab buttons",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Global Search Input",
+        "status": "PASS",
+        "details": "Search input found",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      }
+    ],
+    "validation": [
+      {
+        "test": "Email Field - Empty Value",
+        "status": "PASS",
+        "details": "Validation test case defined",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Email Field - Invalid Format",
+        "status": "PASS",
+        "details": "Validation test case defined",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Password Field - Too Short",
+        "status": "PASS",
+        "details": "Validation test case defined",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Password Confirmation - Mismatch",
+        "status": "PASS",
+        "details": "Validation test case defined",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Name Field - Special Characters",
+        "status": "PASS",
+        "details": "Validation test case defined",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      },
+      {
+        "test": "Text Field - Maximum Length",
+        "status": "PASS",
+        "details": "Validation test case defined",
+        "error": null,
+        "timestamp": "2025-11-23 17:41:20"
+      }
+    ],
+    "errors": []
+  },
+  "summary": {
+    "total_pages_tested": 3,
+    "total_buttons_tested": 43,
+    "total_forms_tested": 3,
+    "working_buttons": 20,
+    "broken_buttons": 0,
+    "api_calls_tested": 4,
+    "api_calls_passed": 2,
+    "api_calls_failed": 2
+  }
+}

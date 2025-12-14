@@ -11,19 +11,62 @@ from .serializers import (
 )
 from users.permissions import RolePermission
 from django.contrib.auth import get_user_model
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+import logging
+
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
+
+
+def ensure_team_room(user: User) -> ChatRoom:
+    """Ensure a shared team room exists and that the current user is a member."""
+    active_users = User.objects.filter(is_active=True)
+    fallback_user = active_users.first() or User.objects.first()
+    team_room = ChatRoom.objects.filter(room_type='team', is_active=True).order_by('-created_at').first()
+    if not team_room:
+        creator = user if user and user.is_authenticated else fallback_user
+        if not creator:
+            # If there are literally no users yet, create or fetch a minimal placeholder user
+            # so the team room creation does not fail.
+            creator, _ = User.objects.get_or_create(email='team@system.local', defaults={'is_active': True})
+        team_room = ChatRoom.objects.create(
+            name='Team Channel',
+            description='Company-wide team chat',
+            room_type='team',
+            created_by=creator,
+            is_active=True,
+        )
+        if active_users.exists():
+            team_room.members.add(*active_users)
+    else:
+        if user and user.is_authenticated:
+            team_room.members.add(user)
+    return team_room
 
 class ChatRoomViewSet(viewsets.ModelViewSet):
     """ViewSet لغرف الدردشة"""
     serializer_class = ChatRoomSerializer
-    permission_classes = [IsAuthenticated, RolePermission]
+    # Allow any authenticated user to access/create team chats
+    permission_classes = [IsAuthenticated]
     allowed_roles = ['admin', 'manager', 'developer', 'client']
     
     def get_queryset(self):
         user = self.request.user
-        return ChatRoom.objects.filter(
-            Q(members=user) | Q(created_by=user)
+        team_room = ensure_team_room(user)
+        qs = ChatRoom.objects.filter(
+            Q(members=user) | Q(created_by=user) | Q(room_type='team')
         ).distinct()
+        # Ensure user is a member of the shared team room
+        if user and user.is_authenticated:
+            team_room.members.add(user)
+        return qs
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -33,13 +76,51 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=True, methods=['post'])
+    def add_members(self, request, pk=None):
+        """Add members to a room by email list."""
+        room = self.get_object()
+        members_raw = request.data.get('members')
+        if not members_raw:
+            return Response({'members': 'Provide a list of member emails.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if isinstance(members_raw, str):
+            members_list = [m.strip() for m in members_raw.split(',') if m.strip()]
+        else:
+            members_list = [str(m).strip() for m in members_raw if str(m).strip()]
+
+        if not members_list:
+            return Response({'members': 'No valid emails provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        found_users = User.objects.filter(email__in=members_list, is_active=True)
+        found_emails = set(found_users.values_list('email', flat=True))
+        missing = [m for m in members_list if m not in found_emails]
+
+        before = room.members.count()
+        room.members.add(*found_users)
+        added = room.members.count() - before
+
+        return Response({
+            'room_id': str(room.id),
+            'added_count': added,
+            'existing_count': before,
+            'not_found': missing,
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def ensure_dm(self, request):
         """Create or return a private DM room between current user and target user.
 
         Accepts: { "user_id": <int> }
         Returns: { id, name, room_type }
         """
+        # Debug logging to help diagnose unexpected HTML/404 responses
+        try:
+            auth_present = bool(request.META.get('HTTP_AUTHORIZATION') or request.headers.get('Authorization'))
+        except Exception:
+            auth_present = bool(request.META.get('HTTP_AUTHORIZATION'))
+        logger.info("ensure_dm called: path=%s user_id=%s auth_present=%s", request.path, getattr(request.user, 'id', None), auth_present)
+
         target_id = request.data.get('user_id')
         if not target_id:
             return Response({'user_id': 'This field is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -101,7 +182,8 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
 class ChatMessageViewSet(viewsets.ModelViewSet):
     """ViewSet لرسائل الدردشة"""
     serializer_class = ChatMessageSerializer
-    permission_classes = [IsAuthenticated, RolePermission]
+    # Allow any authenticated user to send/read team messages
+    permission_classes = [IsAuthenticated]
     allowed_roles = ['admin', 'manager', 'developer', 'client']
     
     def get_queryset(self):
@@ -212,6 +294,54 @@ class MessageReactionViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         return MessageReaction.objects.filter(user=self.request.user)
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class ChatPageView(LoginRequiredMixin, TemplateView):
+    """HTML page for AI chat assistant"""
+    template_name = 'chat/chat_list.html'
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        team_room = ensure_team_room(self.request.user)
+        rooms = ChatRoom.objects.filter(
+            Q(members=self.request.user) | Q(created_by=self.request.user) | Q(room_type='team')
+        ).distinct()
+        # Ensure membership in team room
+        team_room.members.add(self.request.user)
+        ctx['rooms'] = rooms[:10]
+        return ctx
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class TeamChatPageView(LoginRequiredMixin, TemplateView):
+    """HTML page for team chat"""
+    # Use the glass-styled template created during redesign
+    template_name = 'chat/team_chat_glass.html'
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        team_room = ensure_team_room(self.request.user)
+
+        rooms_qs = ChatRoom.objects.filter(
+            Q(members=self.request.user) | Q(created_by=self.request.user) | Q(room_type='team')
+        ).distinct()
+        ctx['rooms'] = rooms_qs[:20]
+        ctx['total_room_count'] = rooms_qs.count()
+        ctx['team_room_count'] = rooms_qs.filter(room_type='team').count()
+        ctx['private_room_count'] = rooms_qs.filter(room_type='private').count()
+        ctx['active_room_count'] = rooms_qs.filter(is_active=True).count()
+        ctx['team_member_count'] = User.objects.filter(is_active=True).count()
+        ctx['team_room_id'] = str(team_room.id)
+        return ctx
+
+
+class ChatRoomRedirectView(LoginRequiredMixin, View):
+    """Redirect bare room URLs to the team chat UI with the room preselected."""
+
+    def get(self, request, room_id):
+        target = f"{reverse('team-chat')}?room={room_id}"
+        return redirect(target)
 
 
 

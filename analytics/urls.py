@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AnalyticsReportViewSet, ProductivityMetricsViewSet,
     TimeTrackingViewSet, PerformanceIndicatorViewSet,
-    DashboardWidgetViewSet
+    DashboardWidgetViewSet, AnalyticsPageView, DashboardStatsApiView
 )
 
 router = DefaultRouter()
@@ -14,5 +14,7 @@ router.register(r'indicators', PerformanceIndicatorViewSet, basename='performanc
 router.register(r'widgets', DashboardWidgetViewSet, basename='dashboard-widgets')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('', AnalyticsPageView.as_view(), name='analytics'),  # HTML page
+    path('api/', include(router.urls)),  # REST API
+    path('api/stats/', DashboardStatsApiView.as_view(), name='analytics-stats'),  # Dashboard stats
 ]

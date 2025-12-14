@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}API Explorer | Smart Task Manager{% endblock %}
+{% block main_content %}
+<!-- Page Header -->
+<header class="page-header">
+  <div class="header-left">
+    <h1>API Explorer</h1>
+    <p>Test all available API endpoints with live responses</p>
+  </div>
+  <div class="header-right">
+    <button class="icon-button" id="clear-response" title="Clear Response">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    </button>
+    <button class="primary-button" onclick="window.location.reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<div class="api-section" id="api-buttons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:1rem"></div>
+
+<div style="margin-top:2rem">
+  <div class="stats-grid" style="margin-bottom:1rem">
+    <div class="stat-card">
+      <div class="stat-info">
+        <h3 id="success-count">0</h3>
+        <p>Successful</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-info">
+        <h3 id="error-count">0</h3>
+        <p>Errors</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-info">
+        <h3 id="total-requests">0</h3>
+        <p>Total Requests</p>
+      </div>
+    </div>
+  </div>
+  
+  <h3>Response <small id="response-info" style="color:#666;font-size:0.8em"></small></h3>
+  <pre id="api-response" style="background:#111;color:#0f0;padding:12px;border-radius:6px;max-height:420px;overflow:auto;font-size:0.8rem;font-family:monospace">Click any API button above to see the response here...</pre>
+</div>
+{% endblock %}
+{% block page_scripts %}
+<script src="{% static 'js/api_explorer.js' %}?v=20251120"></script>
+{% endblock %}

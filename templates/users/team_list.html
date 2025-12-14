@@ -1,0 +1,964 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Team - Smart Task Manager{% endblock %}
+
+{% block content %}
+<!-- Animated Background -->
+<div class="dashboard-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+<div class="grid-pattern"></div>
+
+<!-- Page Header -->
+<header class="page-header slide-up" style="margin-top:0 !important;padding-top:0 !important;">
+    <div class="header-card" style="margin-top:0 !important;padding-top:0 !important;">
+        <div class="header-info">
+            <h1>Team Management</h1>
+            <p>Manage team members and their roles</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="filter-btn">
+                <i class="fas fa-filter"></i>
+                Filter
+            </button>
+            <a href="{% url 'add_member' %}" class="btn btn-primary" id="add-member-btn" style="text-decoration:none;">
+                <i class="fas fa-user-plus"></i>
+                Add Member
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- Stats Cards -->
+<div class="stats-grid fade-in">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Total Members</div>
+            <style>
+            /* Safety: hide modals by default even if global CSS fails to load */
+            .modal { display: none; }
+            .modal.active { display: flex; }
+            </style>
+
+                <div class="stat-value" id="total-members">0</div>
+            </div>
+            <div class="stat-icon stat-logo" style="background:linear-gradient(135deg,#8B5CF6,#06B6D4);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-user-friends" style="font-size:38px;color:#fff;display:inline-block;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Admins</div>
+                <div class="stat-value" id="admins-count">0</div>
+            </div>
+            <div class="stat-icon stat-logo" style="background:linear-gradient(135deg,#F59E0B,#EF4444);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-user-tie" style="font-size:38px;color:#fff;display:inline-block;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Developers</div>
+                <div class="stat-value" id="developers-count">0</div>
+            </div>
+            <div class="stat-icon stat-logo" style="background:linear-gradient(135deg,#06B6D4,#10B981);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-laptop-code" style="font-size:38px;color:#fff;display:inline-block;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Active Now</div>
+                <div class="stat-value" id="active-count">0</div>
+            </div>
+            <div class="stat-icon stat-logo" style="background:linear-gradient(135deg,#10B981,#8B5CF6);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-bolt" style="font-size:38px;color:#fff;display:inline-block;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="glass-card slide-up" style="padding: 16px 20px; margin-bottom: 32px;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-users"></i>
+            Team Members
+        </h2>
+        <select class="form-select" id="filter-role" style="width: 180px;">
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="developer">Developer</option>
+            <option value="designer">Designer</option>
+            <option value="client">Client</option>
+        </select>
+    </div>
+    <div class="search-input-wrapper" style="margin-top: 12px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input type="text" class="form-input" id="search-members" placeholder="Search for member..." style="padding-right: 40px;">
+    </div>
+</div>
+
+<!-- Team Grid -->
+<div class="team-grid" id="team-grid">
+    <!-- Will be populated by JavaScript -->
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Add Member Modal -->
+<div class="modal" id="add-member-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Member</h2>
+            <button class="modal-close" onclick="closeModal('add-member-modal')">×</button>
+        </div>
+        
+        <form id="add-member-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="add-email">Email Address *</label>
+                <input type="email" id="add-email" name="email" class="form-input" placeholder="member@example.com" required autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="add-full-name">Full Name *</label>
+                <input type="text" id="add-full-name" name="full_name" class="form-input" placeholder="Enter full name" required autocomplete="name">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="add-role">Role *</label>
+                <select id="add-role" name="role" class="form-select" required autocomplete="role">
+                    <option value="developer">Developer</option>
+                    <option value="designer">Designer</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                    <option value="client">Client</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="add-phone">Phone Number</label>
+                <input type="tel" id="add-phone" name="phone" class="form-input" placeholder="+20 xxx xxx xxxx" autocomplete="tel">
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('add-member-modal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Member</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Member Details Modal -->
+<div class="modal" id="member-details-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Member Details</h2>
+            <button class="modal-close" onclick="closeModal('member-details-modal')">×</button>
+        </div>
+        
+        <div class="member-profile">
+            <div class="profile-avatar" id="detail-avatar">أم</div>
+            <h3 id="detail-name">Member Name</h3>
+            <span class="badge badge-primary" id="detail-role">Role</span>
+        </div>
+        
+        <div class="member-stats">
+            <div class="member-stat">
+                <span class="stat-number" id="detail-tasks">0</span>
+                <span class="stat-text">Tasks</span>
+            </div>
+            <div class="member-stat">
+                <span class="stat-number" id="detail-completed">0</span>
+                <span class="stat-text">Completed</span>
+            </div>
+            <div class="member-stat">
+                <span class="stat-number" id="detail-projects">0</span>
+                <span class="stat-text">Projects</span>
+            </div>
+        </div>
+        
+        <div class="member-info-list">
+            <div class="info-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span id="detail-email">email@example.com</span>
+            </div>
+            <div class="info-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                <span id="detail-phone">+20 xxx xxx xxxx</span>
+            </div>
+            <div class="info-item">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span id="detail-joined">Joined: ...</span>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('member-details-modal')">Close</button>
+            <button class="btn btn-primary" id="start-chat-btn">Start Chat</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Dashboard - Liquid Glass Design */
+.dashboard-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: orbFloat 20s ease-in-out infinite;
+}
+.orb-1 {
+    width: 600px;
+    height: 600px;
+    background: linear-gradient(135deg, #8B5CF6, #EC4899);
+    top: -20%;
+    right: -10%;
+    opacity: 0.5;
+}
+.orb-2 {
+    width: 500px;
+    height: 500px;
+    background: linear-gradient(135deg, #06B6D4, #10B981);
+    bottom: -15%;
+    left: -10%;
+    opacity: 0.4;
+    animation-delay: -7s;
+}
+.orb-3 {
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(135deg, #F59E0B, #EF4444);
+    top: 50%;
+    left: 30%;
+    opacity: 0.3;
+    animation-delay: -14s;
+}
+@keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(40px, -40px) scale(1.1); }
+    50% { transform: translate(-20px, 20px) scale(0.95); }
+    75% { transform: translate(20px, 40px) scale(1.05); }
+}
+.grid-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Page Header */
+.page-header {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 2rem;
+}
+.header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 28px;
+    box-shadow: 0 18px 44px rgba(17,24,39,0.28);
+}
+.header-info h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 6px;
+}
+.header-info p {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    margin: 0;
+}
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    font-family: inherit;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    color: #fff;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+}
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.5);
+}
+.btn-secondary {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+}
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+.btn-small {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 12px;
+}
+.btn-accent {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #EF4444;
+}
+.btn-accent:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+.stat-card {
+    position: relative;
+    padding: 28px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 24px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--stat-color), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.stat-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4), 0 0 50px var(--stat-glow);
+}
+.stat-card:hover::before {
+    opacity: 1;
+}
+.stat-card:nth-child(1) { --stat-color: #8B5CF6; --stat-glow: rgba(139, 92, 246, 0.2); }
+.stat-card:nth-child(2) { --stat-color: #F59E0B; --stat-glow: rgba(245, 158, 11, 0.2); }
+.stat-card:nth-child(3) { --stat-color: #06B6D4; --stat-glow: rgba(6, 182, 212, 0.2); }
+.stat-card:nth-child(4) { --stat-color: #10B981; --stat-glow: rgba(16, 185, 129, 0.2); }
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.stat-label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+.stat-value {
+    font-size: 48px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--stat-color), rgba(255,255,255,0.1));
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    font-size: 24px;
+}
+@media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .header-card {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+        text-align: center;
+    }
+    .header-actions { width: 100%; justify-content: center; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-value { font-size: 36px; }
+}
+.slide-up {
+    animation: slideUp 0.6s ease forwards;
+}
+.fade-in {
+    animation: fadeIn 0.6s ease forwards;
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    margin-bottom: 32px;
+}
+@media (max-width: 1200px) {
+    .team-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 900px) {
+    .team-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 600px) {
+    .team-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+/* تحسين كروت الفريق لتكون أكثر عصرية وتناسق مع داشبورد */
+.member-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(40px);
+    border: 1.5px solid rgba(139,92,246,0.18);
+    border-radius: 28px;
+    box-shadow: 0 18px 44px rgba(17,24,39,0.28);
+    padding: 32px 24px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    min-height: 240px;
+    font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+.member-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    border-color: #8B5CF6;
+    box-shadow: 0 25px 50px rgba(139,92,246,0.22), 0 0 40px #8B5CF633;
+}
+.avatar-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    margin-bottom: 8px;
+}
+.member-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 18px rgba(139,92,246,0.18);
+    border: 2px solid #fff2;
+}
+.member-avatar.admin {
+    background: linear-gradient(135deg, #F59E0B, #EF4444);
+}
+.member-avatar.designer {
+    background: linear-gradient(135deg, #9b59b6, #e74c3c);
+}
+.member-avatar.manager {
+    background: linear-gradient(135deg, #06B6D4, #8B5CF6);
+}
+.member-avatar.developer {
+    background: linear-gradient(135deg, #10B981, #06B6D4);
+}
+.member-name {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 2px;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+.member-email {
+    font-size: 13px;
+    color: #a5b4fc;
+    margin-bottom: 8px;
+    word-break: break-all;
+}
+.member-role-badge {
+    display: inline-block;
+    padding: 7px 16px;
+    background: rgba(139, 92, 246, 0.13);
+    border-radius: 20px;
+    font-size: 13px;
+    color: #8B5CF6;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+}
+.member-meta {
+    display: flex;
+    gap: 24px;
+    padding-top: 8px;
+    border-top: 1px solid #8B5CF633;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
+}
+.meta-item {
+    text-align: center;
+}
+.meta-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #06B6D4;
+}
+.meta-label {
+    font-size: 11px;
+    color: #a5b4fc;
+}
+.member-actions {
+    width: 100%;
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+}
+.btn-chat {
+    width: 100%;
+    padding: 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.18);
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.btn-chat .fa-comments {
+    font-size: 22px;
+    margin-left: 6px;
+}
+.online-indicator {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    background: #10B981;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #10B98199;
+}
+
+/* تحسين شريط البحث والفلاتر ليظهر بشكل عصري ومتناسق مع لوحة التحكم */
+.glass-card.slide-up {
+    padding: 24px 32px !important;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    border-radius: 24px;
+    box-shadow: 0 18px 44px rgba(17,24,39,0.24);
+    border: 1px solid rgba(139,92,246,0.18);
+    backdrop-filter: blur(30px);
+}
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 0;
+}
+.card-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #8B5CF6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.5px;
+}
+.form-select {
+    padding: 12px 18px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 14px;
+    color: #8B5CF6;
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 700;
+}
+.form-select:focus {
+    outline: none;
+    border-color: #8B5CF6;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(139,92,246,0.12));
+}
+.form-select option {
+    background: #1a1a2e;
+    color: #8B5CF6;
+}
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    border-radius: 14px;
+    padding: 0 16px;
+    margin-top: 16px;
+    box-shadow: 0 12px 28px rgba(17,24,39,0.18);
+    border: 1px solid rgba(139,92,246,0.18);
+    width: 100%;
+    max-width: 400px;
+}
+.search-input-wrapper svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8B5CF6;
+    opacity: 0.7;
+}
+.modal .modal-content {
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    border: 1px solid rgba(139,92,246,0.18);
+    box-shadow: 0 18px 44px rgba(17,24,39,0.28);
+    backdrop-filter: blur(30px);
+}
+.modal .modal-header,
+.modal .modal-footer {
+    border-color: rgba(139,92,246,0.16);
+}
+.btn-secondary {
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    border: 1px solid rgba(139,92,246,0.18);
+    color: #8B5CF6;
+    box-shadow: 0 12px 28px rgba(17,24,39,0.16);
+}
+.btn-secondary:hover {
+    background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(139,92,246,0.12));
+    border-color: #8B5CF6;
+}
+.form-input#search-members {
+    width: 100%;
+    padding: 12px 12px 12px 38px;
+    border: none;
+    background: transparent;
+    color: #8B5CF6;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 14px;
+    outline: none;
+    transition: background 0.2s;
+}
+.form-input#search-members::placeholder {
+    color: #a5b4fc;
+    opacity: 0.7;
+    font-weight: 400;
+}
+@media (max-width: 900px) {
+    .glass-card.slide-up {
+        padding: 16px 10px !important;
+    }
+    .search-input-wrapper {
+        max-width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auth Helper
+function getAuthHeaders() {
+    const token = localStorage.getItem('accessToken');
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+// Check authentication and redirect if needed
+function checkAuth(response) {
+    if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
+        return false;
+    }
+    return true;
+}
+
+// Modal Functions
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        padding: 16px 24px;
+        background: ${type === 'success' ? 'rgba(76, 175, 80, 0.9)' : type === 'error' ? 'rgba(255, 111, 97, 0.9)' : 'rgba(74, 144, 226, 0.9)'};
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        z-index: 3000;
+        font-weight: 600;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Load team members
+async function loadTeamMembers() {
+    const grid = document.getElementById('team-grid');
+    grid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">Loading...</div>';
+    
+    try {
+        const response = await fetch('/api/users/team/', {
+            credentials: 'include',
+            headers: getAuthHeaders()
+        });
+        
+        if (!checkAuth(response)) return;
+        
+        let members = [];
+        if (response.ok) {
+            const data = await response.json();
+            members = data.results || data;
+        }
+        
+        // Fallback sample data if API fails or empty
+        if (members.length === 0) {
+            members = [
+                { id: 1, email: 'ahmed@example.com', first_name: 'أحمد', last_name: 'محمد', role: 'admin', tasks_count: 12, completed_count: 8, is_online: true },
+                { id: 2, email: 'sara@example.com', first_name: 'سارة', last_name: 'أحمد', role: 'designer', tasks_count: 8, completed_count: 6, is_online: true },
+                { id: 3, email: 'mohamed@example.com', first_name: 'محمد', last_name: 'علي', role: 'developer', tasks_count: 15, completed_count: 12, is_online: false },
+                { id: 4, email: 'nour@example.com', first_name: 'نور', last_name: 'حسن', role: 'manager', tasks_count: 5, completed_count: 4, is_online: true },
+            ];
+        }
+        
+        // Update stats
+        document.getElementById('total-members').textContent = members.length;
+        document.getElementById('admins-count').textContent = members.filter(m => m.role === 'admin' || m.role === 'manager').length;
+        document.getElementById('developers-count').textContent = members.filter(m => m.role === 'developer').length;
+        document.getElementById('active-count').textContent = members.filter(m => m.is_online).length;
+        
+        const roleLabels = {
+            'admin': 'Admin',
+            'manager': 'Manager',
+            'developer': 'Developer',
+            'designer': 'Designer',
+            'client': 'Client'
+        };
+        
+        grid.innerHTML = members.map(member => {
+                const fullName = `${member.first_name || ''} ${member.last_name || ''}`.trim() || member.email.split('@')[0];
+                const initials = fullName.split(' ').map(n => n.charAt(0)).join('').substring(0, 2);
+                const phone = member.phone_number || member.phone || 'Not Available';
+                const joined = member.joined_date || member.joined || 'Not Available';
+                return `
+                    <div class="member-card" data-role="${(member.role || '').toLowerCase()}">
+                        <div class="avatar-wrapper">
+                            <div class="member-avatar ${member.role}">${initials}</div>
+                            ${member.is_online ? '<div class="online-indicator"></div>' : ''}
+                        </div>
+                        <div class="member-name">${fullName}</div>
+                        <div class="member-email">${member.email}</div>
+                        <div class="member-role-badge">${roleLabels[member.role] || member.role}</div>
+                        <div class="member-meta">
+                            <div class="meta-item">
+                                <div class="meta-value">${member.tasks_count || 0}</div>
+                                <div class="meta-label">Tasks</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-value">${member.completed_count || 0}</div>
+                                <div class="meta-label">Completed</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; font-size:13px; color:#06B6D4;">
+                            <div><strong>Phone:</strong> ${phone}</div>
+                            <div><strong>Joined:</strong> ${joined}</div>
+                        </div>
+                        <div class="member-actions">
+                            <button class="btn btn-chat" onclick="startChat(${member.id})"><i class='fa fa-comments'></i> Chat</button>
+                        </div>
+                    </div>
+                `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading team:', error);
+        grid.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">Error loading team</div>';
+    }
+}
+
+function viewMember(member) {
+    const fullName = `${member.first_name || ''} ${member.last_name || ''}`.trim() || member.email.split('@')[0];
+    const initials = fullName.split(' ').map(n => n.charAt(0)).join('').substring(0, 2);
+    
+    document.getElementById('detail-avatar').textContent = initials;
+        document.getElementById('detail-name').textContent = fullName;
+        document.getElementById('detail-role').textContent = member.role;
+        document.getElementById('detail-email').textContent = member.email;
+        document.getElementById('detail-phone').textContent = member.phone_number || 'Not Available';
+        document.getElementById('detail-tasks').textContent = member.tasks_count || 0;
+        document.getElementById('detail-completed').textContent = member.completed_count || 0;
+        document.getElementById('detail-projects').textContent = member.projects_count || 0;
+    
+    openModal('member-details-modal');
+}
+
+function startChat(userId) {
+    showToast('Starting chat...', 'info');
+    window.location.href = '/chat/team/';
+}
+
+// Event Listeners
+document.getElementById('add-member-btn').addEventListener('click', () => openModal('add-member-modal'));
+
+document.getElementById('add-member-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch("{% url 'api-user-invite' %}", {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({
+                email: formData.get('email'),
+                full_name: formData.get('full_name'),
+                role: formData.get('role'),
+                phone: formData.get('phone')
+            })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+            const password = data.temporary_password;
+            const message = password ? `Invitation sent. Temporary password: ${password}` : 'Invitation sent successfully';
+            showToast(message, 'success');
+            closeModal('add-member-modal');
+            e.target.reset();
+            loadTeamMembers();
+        } else {
+            const errorMessage = data.error || 'Failed to add member.';
+            showToast(errorMessage, 'error');
+        }
+    } catch (error) {
+        showToast('Failed to add member. Please try again.', 'error');
+    }
+});
+
+// Search and filter
+document.getElementById('search-members').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    document.querySelectorAll('.member-card').forEach(card => {
+        const name = card.querySelector('.member-name').textContent.toLowerCase();
+        const email = card.querySelector('.member-email').textContent.toLowerCase();
+        card.style.display = (name.includes(search) || email.includes(search)) ? 'block' : 'none';
+    });
+});
+
+document.getElementById('filter-role').addEventListener('change', (e) => {
+    const selectedRole = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.member-card').forEach(card => {
+        const cardRole = (card.dataset.role || '').toLowerCase();
+        card.style.display = (!selectedRole || cardRole === selectedRole) ? 'block' : 'none';
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', loadTeamMembers);
+</script>
+{% endblock %}

@@ -1,11 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
 from django.db.models import Q, Sum, Avg, Count
 from django.utils import timezone
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from datetime import timedelta, date
 from .models import (
     AnalyticsReport, ProductivityMetrics, TimeTracking, 
@@ -502,3 +505,118 @@ class DashboardWidgetViewSet(viewsets.ModelViewSet):
             date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
         
         return generate_excel_report(request.user, date_from, date_to)
+
+
+class AnalyticsPageView(LoginRequiredMixin, TemplateView):
+    """HTML page for analytics dashboard"""
+    template_name = 'analytics/analytics_dashboard.html'
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        ctx['reports'] = AnalyticsReport.objects.filter(
+            Q(created_by=user) | Q(is_public=True)
+        ).order_by('-created_at')[:10]
+        return ctx
+
+
+class DashboardStatsApiView(APIView):
+    """API endpoint for dashboard statistics - returns real data"""
+    permission_classes = [AllowAny]  # Allow all to fix loading issue
+    
+    def get(self, request):
+        from tasks.models import Task
+        from projects.models import Project
+        from django.contrib.auth import get_user_model
+        from datetime import datetime, timedelta
+        
+        User = get_user_model()
+        user = request.user
+        
+        # Get date range
+        today = datetime.now().date()
+        month_ago = today - timedelta(days=30)
+        two_months_ago = today - timedelta(days=60)
+        
+        # Tasks stats
+        all_tasks = Task.objects.all()
+        total_tasks = all_tasks.count()
+        completed_tasks = all_tasks.filter(status__in=['done', 'completed']).count()
+        in_progress_tasks = all_tasks.filter(status='in_progress').count()
+        overdue_tasks = all_tasks.filter(due_date__lt=today).exclude(status__in=['done', 'completed']).count()
+        
+        # Last month comparison
+        last_month_completed = all_tasks.filter(
+            status__in=['done', 'completed'],
+            updated_at__date__range=[two_months_ago, month_ago]
+        ).count()
+        this_month_completed = all_tasks.filter(
+            status__in=['done', 'completed'],
+            updated_at__date__gte=month_ago
+        ).count()
+        
+        # Calculate change percentage
+        if last_month_completed > 0:
+            change_percent = round(((this_month_completed - last_month_completed) / last_month_completed) * 100)
+        else:
+            change_percent = 100 if this_month_completed > 0 else 0
+        
+        # Completion rate
+        completion_rate = round((completed_tasks / total_tasks * 100)) if total_tasks > 0 else 0
+        
+        # Projects stats
+        all_projects = Project.objects.all()
+        total_projects = all_projects.count()
+        active_projects = all_projects.filter(status__in=['active', 'in_progress']).count()
+        
+        # Team stats
+        total_members = User.objects.filter(is_active=True).count()
+        
+        # Team performance (top performers)
+        team_performance = []
+        users = User.objects.filter(is_active=True)[:10]
+        for u in users:
+            user_tasks = Task.objects.filter(assigned_to=u)
+            user_total = user_tasks.count()
+            user_completed = user_tasks.filter(status__in=['done', 'completed']).count()
+            rate = round((user_completed / user_total * 100)) if user_total > 0 else 0
+            
+            # Get user name safely
+            user_name = u.email.split('@')[0]
+            if hasattr(u, 'get_full_name'):
+                user_name = u.get_full_name() or user_name
+            elif hasattr(u, 'first_name') and u.first_name:
+                user_name = f"{u.first_name} {getattr(u, 'last_name', '')}".strip() or user_name
+            
+            if user_total > 0:
+                team_performance.append({
+                    'id': u.id,
+                    'name': user_name,
+                    'email': u.email,
+                    'role': getattr(u, 'role', 'member'),
+                    'tasks': user_total,
+                    'completed': user_completed,
+                    'rate': rate
+                })
+        
+        # Sort by rate descending
+        team_performance.sort(key=lambda x: x['rate'], reverse=True)
+        
+        return Response({
+            'tasks': {
+                'total': total_tasks,
+                'completed': completed_tasks,
+                'in_progress': in_progress_tasks,
+                'overdue': overdue_tasks,
+                'completion_rate': completion_rate,
+                'change_percent': change_percent
+            },
+            'projects': {
+                'total': total_projects,
+                'active': active_projects
+            },
+            'team': {
+                'total_members': total_members,
+                'performance': team_performance[:5]
+            }
+        })

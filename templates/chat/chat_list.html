@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}المحادثات - Smart Task Manager{% endblock %}
+{% block content %}
+<!-- Page Header -->
+<header class="page-header slide-up">
+    <div class="header-content">
+        <div>
+            <h1 class="header-title">المحادثات</h1>
+            <p class="header-subtitle">تواصل مع فريقك</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="new-room-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                غرفة جديدة
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Chat Rooms Grid -->
+<div class="tasks-grid fade-in" id="rooms-grid">
+    {% if rooms %}
+        {% for room in rooms %}
+        <div class="task-card">
+            <div class="task-header">
+                <div>
+                    <h3 class="task-title">{{ room.name }}</h3>
+                    <span class="badge badge-primary">{{ room.room_type }}</span>
+                </div>
+            </div>
+            <p class="task-description">{{ room.members.count }} أعضاء</p>
+            <div class="task-footer">
+                <button class="btn btn-small btn-primary" onclick="openRoom('{{ room.id }}')">فتح المحادثة</button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin: 0 auto 20px;">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">لا توجد محادثات</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">ابدأ بإنشاء غرفة محادثة جديدة للتواصل مع فريقك</p>
+            <button class="btn btn-primary" id="empty-new-room-btn">إنشاء غرفة محادثة</button>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- New Room Modal -->
+<div class="modal" id="new-room-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">غرفة محادثة جديدة</h2>
+            <button class="modal-close" onclick="closeModal('new-room-modal')">×</button>
+        </div>
+        
+        <form id="new-room-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">اسم الغرفة *</label>
+                <input type="text" name="name" class="form-input" placeholder="أدخل اسم الغرفة" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">نوع الغرفة</label>
+                <select name="room_type" class="form-select">
+                    <option value="group">مجموعة</option>
+                    <option value="private">خاصة</option>
+                </select>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('new-room-modal')">إلغاء</button>
+                <button type="submit" class="btn btn-primary">إنشاء الغرفة</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auth Helper
+function getAuthHeaders() {
+    const token = localStorage.getItem('accessToken');
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+// Modal Functions
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        padding: 16px 24px;
+        background: ${type === 'success' ? 'rgba(76, 175, 80, 0.9)' : type === 'error' ? 'rgba(255, 111, 97, 0.9)' : 'rgba(74, 144, 226, 0.9)'};
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        z-index: 3000;
+        font-weight: 600;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function openRoom(roomId) {
+    showToast('جاري فتح المحادثة...', 'info');
+    // TODO: Implement chat room view
+}
+
+// Event Listeners
+document.getElementById('new-room-btn')?.addEventListener('click', () => openModal('new-room-modal'));
+document.getElementById('empty-new-room-btn')?.addEventListener('click', () => openModal('new-room-modal'));
+
+document.getElementById('new-room-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/chat/api/rooms/', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({
+                name: formData.get('name'),
+                room_type: formData.get('room_type')
+            })
+        });
+        
+        if (response.ok) {
+            showToast('تم إنشاء الغرفة بنجاح', 'success');
+            closeModal('new-room-modal');
+            location.reload();
+        } else {
+            showToast('خطأ في إنشاء الغرفة', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('خطأ في إنشاء الغرفة', 'error');
+    }
+});
+</script>
+{% endblock %}

@@ -12,7 +12,7 @@ function initializeSearch() {
     const searchResults = document.getElementById('search-results');
     
     if (!searchInput) {
-        console.warn('Search input not found');
+        // Search not available on this page - this is normal
         return;
     }
     

@@ -1,228 +1,339 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}AI Chat - {{ block.super }}{% endblock %}
+{% block title %}محادثات الفريق - Smart Task Manager{% endblock %}
 
-{% block extra_head %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
-{% endblock %}
-
-{% block main_content %}
-    <div class="chat-layout">
-        <!-- Chat Sidebar -->
-        <aside class="chat-sidebar open" id="chat-sidebar">
-            <div class="chat-sidebar-header">
-                <h3>Conversations</h3>
-                <button class="icon-button-small" id="new-conversation-btn" title="New Conversation">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>
-            
-            <div class="conversations-list" id="conversations-list">
-                <div class="conversation-item active" data-conversation-id="1">
-                    <div class="conversation-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <div class="conversation-info">
-                        <h4>Project Planning Discussion</h4>
-                        <p>2 hours ago</p>
-                    </div>
-                    <div class="conversation-actions">
-                        <button class="conversation-delete-btn" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+{% block content %}
+<div class="chat-layout" style="display:flex;height:calc(100vh - 80px);gap:0;">
+    <style>
+    /* Chat sidebar: hide on desktop, show as overlay on mobile */
+    .chat-sidebar.mobile-only { display: none; }
+    #toggle-sidebar-btn { display: none; }
+    @media (max-width: 1024px) {
+        .chat-sidebar.mobile-only { display:flex !important; position: fixed; left: 0; top: 0; height: 100vh; z-index: 1200; transform: translateX(-100%); transition: transform 0.28s ease; width: 280px; background: rgba(255,255,255,0.03); border-right:1px solid rgba(255,255,255,0.08); flex-direction:column; }
+        .chat-sidebar.mobile-only.open { transform: translateX(0); }
+        #toggle-sidebar-btn { display: flex !important; }
+        .chat-main { margin-left: 0; }
+    }
+    </style>
+    <!-- Chat Sidebar (mobile-only overlay) -->
+    <aside class="chat-sidebar mobile-only" id="chat-sidebar" style="width:280px;background:rgba(255,255,255,0.03);border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;">
+        <div style="padding:20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;">المحادثات</h3>
+            <button class="btn-icon btn-secondary" id="new-conversation-btn" title="محادثة جديدة" style="width:36px;height:36px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="conversations-list" id="conversations-list" style="flex:1;overflow-y:auto;padding:12px;">
+            <div class="conversation-item active" data-conversation-id="1" style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.06);border-radius:12px;cursor:pointer;margin-bottom:8px;border:1px solid rgba(255,255,255,0.1);">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--glow));display:flex;align-items:center;justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
                 </div>
-
-                <div class="conversation-item" data-conversation-id="2">
-                    <div class="conversation-icon">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="conversation-info">
-                        <h4>Productivity Tips</h4>
-                        <p>Yesterday</p>
-                    </div>
-                    <div class="conversation-actions">
-                        <button class="conversation-delete-btn" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="conversation-item" data-conversation-id="3">
-                    <div class="conversation-icon">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="conversation-info">
-                        <h4>Task Management Strategy</h4>
-                        <p>2 days ago</p>
-                    </div>
-                    <div class="conversation-actions">
-                        <button class="conversation-delete-btn" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="conversation-item" data-conversation-id="4">
-                    <div class="conversation-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="conversation-info">
-                        <h4>Team Collaboration</h4>
-                        <p>3 days ago</p>
-                    </div>
-                    <div class="conversation-actions">
-                        <button class="conversation-delete-btn" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="conversation-item" data-conversation-id="5">
-                    <div class="conversation-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="conversation-info">
-                        <h4>Progress Review</h4>
-                        <p>1 week ago</p>
-                    </div>
-                    <div class="conversation-actions">
-                        <button class="conversation-delete-btn" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                <div style="flex:1;min-width:0;">
+                    <h4 style="margin:0 0 4px;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">تخطيط المشروع</h4>
+                    <p style="margin:0;font-size:11px;color:var(--text-muted);">منذ ساعتين</p>
                 </div>
             </div>
 
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    {% with display_name=request.user.get_full_name|default:request.user.email %}
-                    <div class="user-avatar">
-                        <span class="avatar-initial">{{ display_name|slice:":1"|upper }}</span>
-                    </div>
-                    <div class="user-info">
-                        <span class="user-name">{{ display_name }}</span>
-                        <span class="user-status">{% if request.user.is_authenticated %}Online{% else %}Offline{% endif %}</span>
-                    </div>
-                    {% endwith %}
+            <div class="conversation-item" data-conversation-id="2" style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
                 </div>
-            </div>
-        </aside>
-
-        <!-- Main Chat Area -->
-        <div class="chat-main" id="chat-main">
-            <div class="chat-header-area">
-                <button class="icon-button toggle-sidebar-btn" id="toggle-sidebar-btn" title="Toggle Sidebar">
-                    <i class="fas fa-bars"></i>
-                </button>
-                
-                <div class="chat-ai-info">
-                    <div class="ai-avatar-large">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <div>
-                        <h2>S T manger Assistant</h2>
-                        <p class="ai-status">
-                            <span class="status-dot"></span>
-                            Online & Ready to Help
-                        </p>
-                    </div>
-                </div>
-                <div class="chat-actions">
-                    <button class="icon-button" id="clear-chat-btn" title="Clear Chat">
-                        <i class="fas fa-eraser"></i>
-                    </button>
-                    <button class="icon-button" id="export-chat-btn" title="Export Chat">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <button class="icon-button" id="settings-btn" title="Settings">
-                        <i class="fas fa-cog"></i>
-                    </button>
+                <div style="flex:1;min-width:0;">
+                    <h4 style="margin:0 0 4px;font-size:14px;font-weight:600;">نصائح الإنتاجية</h4>
+                    <p style="margin:0;font-size:11px;color:var(--text-muted);">أمس</p>
                 </div>
             </div>
 
-            <div class="chat-messages-area" id="chat-messages">
-                <div class="welcome-screen" id="welcome-screen">
-                    <div class="welcome-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <h3>Welcome to S T manger Assistant!</h3>
-                    <p>I'm here to help you with project planning, task management, productivity tips, and much more.</p>
-
-                    <div class="quick-suggestions">
-                        <button class="suggestion-card" onclick="sendQuickMessage('Help me plan a new project')">
-                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #06b6d4, #ec4899);">
-                                <i class="fas fa-project-diagram"></i>
-                            </div>
-                            <h4>Project Planning</h4>
-                            <p>Get help planning your next project</p>
-                        </button>
-
-                        <button class="suggestion-card" onclick="sendQuickMessage('How can I improve my productivity?')">
-                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">
-                                <i class="fas fa-bolt"></i>
-                            </div>
-                            <h4>Productivity Tips</h4>
-                            <p>Learn ways to be more productive</p>
-                        </button>
-
-                        <button class="suggestion-card" onclick="sendQuickMessage('Help me organize my tasks')">
-                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
-                                <i class="fas fa-tasks"></i>
-                            </div>
-                            <h4>Task Organization</h4>
-                            <p>Get help organizing your tasks</p>
-                        </button>
-
-                        <button class="suggestion-card" onclick="sendQuickMessage('What are the best team management practices?')">
-                            <div class="suggestion-icon" style="background: linear-gradient(135deg, #f97316, #ef4444);">
-                                <i class="fas fa-users-cog"></i>
-                            </div>
-                            <h4>Team Management</h4>
-                            <p>Learn team management best practices</p>
-                        </button>
-                    </div>
+            <div class="conversation-item" data-conversation-id="3" style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06);">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#10b981,#06b6d4);display:flex;align-items:center;justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
                 </div>
-            </div>
-
-            <div class="chat-input-area">
-                <div class="typing-indicator" id="typing-indicator" style="display: none;">
-                    <div class="typing-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <span class="typing-text">AI is thinking...</span>
+                <div style="flex:1;min-width:0;">
+                    <h4 style="margin:0 0 4px;font-size:14px;font-weight:600;">إدارة المهام</h4>
+                    <p style="margin:0;font-size:11px;color:var(--text-muted);">منذ يومين</p>
                 </div>
-
-                <form class="chat-input-form" id="chat-form">
-                    <div class="input-wrapper">
-                        <textarea 
-                            id="chat-input" 
-                            class="chat-input" 
-                            placeholder="Ask me anything about tasks, projects, or productivity..."
-                            rows="1"
-                        ></textarea>
-                        <button type="submit" class="send-button" id="send-btn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
+
+        <div style="padding:16px;border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:600;">
+                    {{ request.user.first_name.0|default:"U" }}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-weight:600;font-size:13px;">
+                        {% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}{{ request.user.email }}{% endif %}
+                    </div>
+                    <div style="font-size:11px;color:#4CAF50;">● متصل</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <div class="chat-main" id="chat-main" style="flex:1;display:flex;flex-direction:column;background:rgba(255,255,255,0.01);">
+        <div style="padding:20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:16px;">
+            <button class="btn-icon btn-secondary" id="toggle-sidebar-btn" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            
+            <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--glow));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+                    <circle cx="8" cy="14" r="2"></circle>
+                    <circle cx="16" cy="14" r="2"></circle>
+                </svg>
+            </div>
+            <div style="flex:1;">
+                <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;">المساعد الذكي</h2>
+                <p style="margin:0;font-size:12px;color:#4CAF50;display:flex;align-items:center;gap:6px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#4CAF50;"></span>
+                    متصل وجاهز للمساعدة
+                </p>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button class="btn-icon btn-secondary" id="clear-chat-btn" title="مسح المحادثة">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-messages-area" id="chat-messages" style="flex:1;overflow-y:auto;padding:24px;">
+            <div class="welcome-screen" id="welcome-screen" style="text-align:center;padding:40px 20px;">
+                <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,var(--primary),var(--glow));margin:0 auto 24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+                        <circle cx="8" cy="14" r="2"></circle>
+                        <circle cx="16" cy="14" r="2"></circle>
+                    </svg>
+                </div>
+                <h3 style="margin:0 0 12px;font-size:24px;font-weight:700;">مرحباً بك في المساعد الذكي!</h3>
+                <p style="margin:0 0 32px;color:var(--text-muted);max-width:400px;margin-left:auto;margin-right:auto;">
+                    أنا هنا لمساعدتك في تخطيط المشاريع، إدارة المهام، نصائح الإنتاجية، والمزيد.
+                </p>
+
+                <div class="quick-suggestions" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;max-width:800px;margin:0 auto;">
+                    <button class="suggestion-card" onclick="sendQuickMessage('ساعدني في تخطيط مشروع جديد')" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;text-align:right;cursor:pointer;transition:all 0.3s;">
+                        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#06b6d4,#ec4899);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h4 style="margin:0 0 6px;font-size:15px;font-weight:600;">تخطيط المشاريع</h4>
+                        <p style="margin:0;font-size:12px;color:var(--text-muted);">مساعدة في تخطيط مشروعك القادم</p>
+                    </button>
+
+                    <button class="suggestion-card" onclick="sendQuickMessage('كيف يمكنني تحسين إنتاجيتي؟')" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;text-align:right;cursor:pointer;transition:all 0.3s;">
+                        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                            </svg>
+                        </div>
+                        <h4 style="margin:0 0 6px;font-size:15px;font-weight:600;">نصائح الإنتاجية</h4>
+                        <p style="margin:0;font-size:12px;color:var(--text-muted);">تعلم طرق لتكون أكثر إنتاجية</p>
+                    </button>
+
+                    <button class="suggestion-card" onclick="sendQuickMessage('ساعدني في تنظيم مهامي')" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;text-align:right;cursor:pointer;transition:all 0.3s;">
+                        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#10b981,#06b6d4);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        <h4 style="margin:0 0 6px;font-size:15px;font-weight:600;">تنظيم المهام</h4>
+                        <p style="margin:0;font-size:12px;color:var(--text-muted);">مساعدة في تنظيم مهامك</p>
+                    </button>
+
+                    <button class="suggestion-card" onclick="sendQuickMessage('ما هي أفضل ممارسات إدارة الفريق؟')" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;text-align:right;cursor:pointer;transition:all 0.3s;">
+                        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ef4444);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <h4 style="margin:0 0 6px;font-size:15px;font-weight:600;">إدارة الفريق</h4>
+                        <p style="margin:0;font-size:12px;color:var(--text-muted);">أفضل ممارسات إدارة الفريق</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding:20px;border-top:1px solid rgba(255,255,255,0.08);">
+            <div class="typing-indicator" id="typing-indicator" style="display:none;padding:12px 0;color:var(--text-muted);font-size:13px;">
+                <span style="display:inline-flex;gap:4px;margin-left:8px;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);animation:bounce 1.4s ease-in-out infinite;"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);animation:bounce 1.4s ease-in-out 0.2s infinite;"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);animation:bounce 1.4s ease-in-out 0.4s infinite;"></span>
+                </span>
+                المساعد يكتب...
+            </div>
+
+            <form class="chat-input-form" id="chat-form" style="display:flex;gap:12px;align-items:flex-end;">
+                <div style="flex:1;position:relative;">
+                    <textarea 
+                        id="chat-input" 
+                        class="form-textarea" 
+                        placeholder="اكتب رسالتك هنا..."
+                        rows="1"
+                        style="resize:none;min-height:48px;max-height:120px;padding-left:50px;"
+                    ></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="send-btn" style="height:48px;width:48px;padding:0;border-radius:14px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </div>
     </div>
+</div>
 
-    <!-- Sidebar Overlay for Mobile -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
-
+<style>
+    .suggestion-card:hover {
+        background: rgba(255,255,255,0.06) !important;
+        border-color: rgba(255,255,255,0.15) !important;
+        transform: translateY(-2px);
+    }
+    .conversation-item:hover {
+        background: rgba(255,255,255,0.06) !important;
+    }
+    @keyframes bounce {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-4px); }
+    }
+    @media (max-width: 768px) {
+        .chat-sidebar { position: fixed; left: -280px; top: 0; height: 100vh; z-index: 1000; transition: left 0.3s; }
+        .chat-sidebar.open { left: 0; }
+        #toggle-sidebar-btn { display: flex !important; }
+    }
+</style>
 {% endblock %}
 
-{% block page_scripts %}
-{{ block.super }}
-    <script src="{% static 'js/chat.js' %}"></script>
+{% block extra_js %}
+<script>
+function sendQuickMessage(message) {
+    const input = document.getElementById('chat-input');
+    input.value = message;
+    document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messagesArea = document.getElementById('chat-messages');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const typingIndicator = document.getElementById('typing-indicator');
+    
+    // Auto-resize textarea
+    input.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
+        
+        // Hide welcome screen
+        if (welcomeScreen) welcomeScreen.style.display = 'none';
+        
+        // Add user message
+        addMessage(message, 'user');
+        input.value = '';
+        input.style.height = 'auto';
+        
+        // Show typing indicator
+        typingIndicator.style.display = 'flex';
+        
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch('/api/ai/chat/', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? 'Bearer ' + token : ''
+                },
+                body: JSON.stringify({ message })
+            });
+            
+            typingIndicator.style.display = 'none';
+            
+            if (response.ok) {
+                const data = await response.json();
+                addMessage(data.response || data.message || 'تم استلام رسالتك', 'ai');
+            } else {
+                addMessage('عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.', 'ai');
+            }
+        } catch (err) {
+            typingIndicator.style.display = 'none';
+            addMessage('خطأ في الاتصال بالخادم', 'ai');
+        }
+    });
+    
+    function addMessage(text, sender) {
+        const isUser = sender === 'user';
+        const msgDiv = document.createElement('div');
+        msgDiv.style.cssText = `
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-direction: ${isUser ? 'row-reverse' : 'row'};
+        `;
+        
+        msgDiv.innerHTML = `
+            <div style="width:36px;height:36px;border-radius:10px;background:${isUser ? 'linear-gradient(135deg,var(--accent),var(--glow))' : 'linear-gradient(135deg,var(--primary),var(--glow))'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                ${isUser ? '<span style="font-size:14px;font-weight:600;color:#fff;">{{ request.user.first_name.0|default:"U" }}</span>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path></svg>'}
+            </div>
+            <div style="max-width:70%;padding:14px 18px;background:${isUser ? 'rgba(114,137,218,0.2)' : 'rgba(255,255,255,0.05)'};border-radius:16px;border:1px solid ${isUser ? 'rgba(114,137,218,0.3)' : 'rgba(255,255,255,0.08)'};line-height:1.6;">
+                ${text}
+            </div>
+        `;
+        
+        messagesArea.appendChild(msgDiv);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+    
+    // Toggle sidebar on mobile
+    document.getElementById('toggle-sidebar-btn')?.addEventListener('click', () => {
+        document.getElementById('chat-sidebar').classList.toggle('open');
+    });
+    
+    // Clear chat
+    document.getElementById('clear-chat-btn')?.addEventListener('click', () => {
+        if (confirm('هل تريد مسح المحادثة؟')) {
+            messagesArea.innerHTML = '';
+            if (welcomeScreen) {
+                messagesArea.appendChild(welcomeScreen);
+                welcomeScreen.style.display = 'block';
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

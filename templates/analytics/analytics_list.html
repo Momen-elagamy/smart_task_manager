@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Analytics | Smart Task Manager{% endblock %}
+{% block main_content %}
+<div class="page-header" style="margin-top:0 !important;padding-top:0 !important;">
+  <h1>Analytics & Reports</h1>
+  <div>
+    <a href="#" class="btn btn-primary" id="create-report-btn">+ New Report</a>
+  </div>
+</div>
+
+{% if reports %}
+<table class="data-table" cellspacing="0" cellpadding="0" style="width:100%;margin-top:1rem">
+  <thead>
+    <tr>
+      <th style="text-align:left;padding:8px">Report Name</th>
+      <th style="text-align:left;padding:8px">Type</th>
+      <th style="text-align:left;padding:8px">Created By</th>
+      <th style="text-align:left;padding:8px">Created At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for report in reports %}
+    <tr>
+      <td style="padding:6px">{{ report.name }}</td>
+      <td style="padding:6px">{{ report.report_type }}</td>
+      <td style="padding:6px">{{ report.created_by.email }}</td>
+      <td style="padding:6px">{{ report.created_at|date:'Y-m-d H:i' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No reports yet. Create your first one!</p>
+{% endif %}
+
+<script>
+// Basic analytics interactions
+document.addEventListener('DOMContentLoaded', () => {
+  const createBtn = document.getElementById('create-report-btn');
+  if (createBtn) {
+    createBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const name = prompt('Report name?');
+      if (!name) return;
+      const report_type = prompt('Report type? (e.g. productivity)', 'productivity') || 'generic';
+      try {
+        createBtn.disabled = true;
+        createBtn.textContent = 'Creating...';
+        const payload = { name, report_type, is_public: true };
+        const resp = await apiFetch('/analytics/api/reports/', { method:'POST', body: JSON.stringify(payload) });
+        if (resp && (resp.id || resp.name)) {
+          window.location.reload();
+        } else {
+          alert('Could not create report');
+        }
+      } catch(err) {
+        console.error('Create report failed', err);
+        alert(err.message || 'Error creating report');
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = '+ New Report';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

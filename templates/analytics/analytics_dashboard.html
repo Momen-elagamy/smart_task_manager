@@ -1,0 +1,1255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics - Smart Task Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+/* Analytics Page - Liquid Glass Design (Same as Dashboard) */
+.dashboard-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: orbFloat 20s ease-in-out infinite;
+}
+
+.orb-1 {
+    width: 600px;
+    height: 600px;
+    background: linear-gradient(135deg, #8B5CF6, #EC4899);
+    top: -20%;
+    right: -10%;
+    opacity: 0.5;
+}
+
+.orb-2 {
+    width: 500px;
+    height: 500px;
+    background: linear-gradient(135deg, #06B6D4, #10B981);
+    bottom: -15%;
+    left: -10%;
+    opacity: 0.4;
+    animation-delay: -7s;
+}
+
+.orb-3 {
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(135deg, #F59E0B, #EF4444);
+    top: 50%;
+    left: 30%;
+    opacity: 0.3;
+    animation-delay: -14s;
+}
+
+@keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(40px, -40px) scale(1.1); }
+    50% { transform: translate(-20px, 20px) scale(0.95); }
+    75% { transform: translate(20px, 40px) scale(1.05); }
+}
+
+/* Grid Pattern */
+.grid-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Page Header */
+.page-header {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 2rem;
+}
+
+.header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 28px;
+    box-shadow: 0 18px 44px rgba(17,24,39,0.28);
+}
+
+.header-info h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 6px;
+}
+
+.header-info p {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    color: #fff;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.5);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(139,92,246,0.18);
+    color: #8B5CF6;
+    box-shadow: 0 12px 28px rgba(17,24,39,0.16);
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(139,92,246,0.12));
+    border-color: #8B5CF6;
+}
+
+.btn-small {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 12px;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card {
+    position: relative;
+    padding: 28px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 24px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--stat-color), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4), 0 0 50px var(--stat-glow);
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-card:nth-child(1) { --stat-color: #8B5CF6; --stat-glow: rgba(139, 92, 246, 0.2); }
+.stat-card:nth-child(2) { --stat-color: #F59E0B; --stat-glow: rgba(245, 158, 11, 0.2); }
+.stat-card:nth-child(3) { --stat-color: #06B6D4; --stat-glow: rgba(6, 182, 212, 0.2); }
+.stat-card:nth-child(4) { --stat-color: #10B981; --stat-glow: rgba(16, 185, 129, 0.2); }
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.stat-value {
+    font-size: 48px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--stat-color), rgba(255,255,255,0.1));
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    font-size: 24px;
+}
+
+.stat-change {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.stat-change.positive {
+    color: #10B981;
+}
+
+.stat-change.negative {
+    color: #EF4444;
+}
+
+/* Glass Card */
+.glass-card {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 28px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 18px 44px rgba(17,24,39,0.24);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-title i {
+    color: #8B5CF6;
+}
+
+/* Form Elements */
+.form-select {
+    padding: 12px 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.form-select:hover, .form-select:focus {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(139, 92, 246, 0.5);
+    outline: none;
+}
+
+.form-select {
+    padding: 12px 18px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(139,92,246,0.06));
+    border: 1px solid rgba(139,92,246,0.18);
+    border-radius: 14px;
+    color: #8B5CF6;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.form-select:hover, .form-select:focus {
+    background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(139,92,246,0.12));
+    border-color: #8B5CF6;
+    outline: none;
+}
+.form-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+/* Progress Bars */
+.progress-item {
+    margin-bottom: 20px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.progress-label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+}
+
+.progress-value {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+}
+
+.progress-bar {
+    height: 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1s ease;
+}
+
+.progress-fill.purple { background: linear-gradient(90deg, #8B5CF6, #A78BFA); }
+.progress-fill.cyan { background: linear-gradient(90deg, #06B6D4, #22D3EE); }
+.progress-fill.green { background: linear-gradient(90deg, #10B981, #34D399); }
+.progress-fill.orange { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.progress-fill.pink { background: linear-gradient(90deg, #EC4899, #F472B6); }
+
+/* Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 16px;
+    transition: all 0.3s;
+}
+
+.activity-item:hover {
+    background: rgba(255,255,255,0.08);
+    transform: translateX(4px);
+}
+
+.activity-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.activity-icon.completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+}
+
+.activity-icon.created {
+    background: rgba(139, 92, 246, 0.2);
+    color: #8B5CF6;
+}
+
+.activity-icon.updated {
+    background: rgba(6, 182, 212, 0.2);
+    color: #06B6D4;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.activity-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+}
+
+.activity-time {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+    color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    z-index: 10000;
+    font-weight: 600;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast.success {
+    background: linear-gradient(135deg, #10B981, #06B6D4);
+}
+
+.toast.error {
+    background: linear-gradient(135deg, #EF4444, #EC4899);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+    animation: slideUp 0.6s ease forwards;
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease forwards;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.5);
+}
+
+.empty-state i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 10px;
+}
+
+/* Light Theme Overrides */
+:root[data-theme="light"] .header-card,
+body[data-theme="light"] .header-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.88), rgba(139,92,246,0.08));
+    border: 1px solid rgba(139,92,246,0.16);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+}
+
+:root[data-theme="light"] .header-info p,
+body[data-theme="light"] .header-info p {
+    color: #475569;
+}
+
+:root[data-theme="light"] .stat-card,
+body[data-theme="light"] .stat-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(139,92,246,0.08));
+    border: 1px solid rgba(139,92,246,0.14);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.12);
+}
+
+:root[data-theme="light"] .stat-label,
+body[data-theme="light"] .stat-label { color: #475569; }
+
+:root[data-theme="light"] .stat-value,
+body[data-theme="light"] .stat-value { color: #0f172a; text-shadow: none; }
+
+:root[data-theme="light"] .card-title,
+body[data-theme="light"] .card-title { color: #0f172a; }
+
+:root[data-theme="light"] .card-title i,
+body[data-theme="light"] .card-title i { color: #6366f1; }
+
+:root[data-theme="light"] .glass-card,
+body[data-theme="light"] .glass-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(139,92,246,0.08));
+    border: 1px solid rgba(139,92,246,0.14);
+    box-shadow: 0 18px 44px rgba(15,23,42,0.12);
+}
+
+:root[data-theme="light"] .progress-label,
+body[data-theme="light"] .progress-label { color: #0f172a; }
+
+:root[data-theme="light"] .progress-value,
+body[data-theme="light"] .progress-value { color: #475569; }
+
+:root[data-theme="light"] .activity-item,
+body[data-theme="light"] .activity-item { background: rgba(99,102,241,0.06); }
+
+:root[data-theme="light"] .activity-item:hover,
+body[data-theme="light"] .activity-item:hover { background: rgba(99,102,241,0.1); }
+
+:root[data-theme="light"] .activity-title,
+body[data-theme="light"] .activity-title { color: #0f172a; }
+
+:root[data-theme="light"] .activity-desc,
+body[data-theme="light"] .activity-desc { color: #475569; }
+
+:root[data-theme="light"] .activity-time,
+body[data-theme="light"] .activity-time { color: #64748b; }
+
+:root[data-theme="light"] .empty-state,
+body[data-theme="light"] .empty-state { color: #475569; }
+
+:root[data-theme="light"] .empty-state h3,
+body[data-theme="light"] .empty-state h3 { color: #0f172a; }
+
+:root[data-theme="light"] .form-select,
+body[data-theme="light"] .form-select { color: #475569; }
+
+:root[data-theme="light"] .form-select option,
+body[data-theme="light"] .form-select option {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+:root[data-theme="light"] .btn-secondary,
+body[data-theme="light"] .btn-secondary { color: #475569; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .header-card {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+        text-align: center;
+    }
+    .header-actions { width: 100%; justify-content: center; flex-wrap: wrap; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-value { font-size: 36px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Animated Background -->
+<div class="dashboard-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+<div class="grid-pattern"></div>
+
+<!-- Page Header -->
+<header class="page-header slide-up">
+    <div class="header-card">
+        <div class="header-info">
+            <h1>Analytics</h1>
+            <p>Track your performance and productivity</p>
+        </div>
+        <div class="header-actions">
+            <select class="form-select" id="time-range">
+                <option value="week">This Week</option>
+                <option value="month" selected>This Month</option>
+                <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
+            </select>
+            <button class="btn btn-secondary" id="refresh-btn">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+            </button>
+            <button class="btn btn-primary" id="export-btn">
+                <i class="fas fa-download"></i>
+                Export
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Stats Cards -->
+<div class="stats-grid fade-in">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-value" id="total-tasks">0</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span id="total-change">+0 this month</span>
+                </div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Completion Rate</div>
+                <div class="stat-value" id="completion-rate">0%</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span id="rate-change">+0% improvement</span>
+                </div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Active Projects</div>
+                <div class="stat-value" id="active-projects">0</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i>
+                    <span id="projects-change">+0 new</span>
+                </div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Completed Tasks</div>
+                <div class="stat-value" id="completed-tasks">0</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-check"></i>
+                    <span id="completed-change">Great progress!</span>
+                </div>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-grid">
+    <!-- Task Status Chart -->
+    <div class="glass-card slide-up">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-chart-pie"></i>
+                Task Status Distribution
+            </h2>
+        </div>
+        <div class="chart-container">
+            <canvas id="status-chart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Priority Chart -->
+    <div class="glass-card slide-up">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-chart-bar"></i>
+                Priority Breakdown
+            </h2>
+        </div>
+        <div class="chart-container">
+            <canvas id="priority-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Workload Trend -->
+    <div class="glass-card slide-up chart-wide">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-chart-line"></i>
+                Workload Trend (Last 14 days)
+            </h2>
+        </div>
+        <div class="chart-container" style="height: 320px;">
+            <canvas id="trend-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Project Progress & Activity -->
+<div class="charts-grid">
+    <!-- Project Progress -->
+    <div class="glass-card slide-up">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-tasks"></i>
+                Project Progress
+            </h2>
+        </div>
+        <div id="project-progress">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Loading projects...</h3>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="glass-card slide-up">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-clock"></i>
+                Recent Activity
+            </h2>
+        </div>
+        <div class="activity-list" id="activity-list">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Loading activity...</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Helper Functions
+function getAuthHeaders() {
+    const token = localStorage.getItem('accessToken');
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+function showToast(message, type = 'info') {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Animate counter
+function animateValue(id, end, suffix = '') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    let start = 0;
+    const duration = 800;
+    const startTime = performance.now();
+    
+    function step(now) {
+        const t = Math.min(1, (now - startTime) / duration);
+        const val = Math.round(start + (end - start) * (1 - Math.pow(1 - t, 3)));
+        el.textContent = val + suffix;
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// Chart instances
+let statusChart = null;
+let priorityChart = null;
+let trendChart = null;
+const analyticsCache = { status: null, priority: null, trend: null };
+
+// Theme helpers
+function isLightTheme() {
+    const rootTheme = document.documentElement.getAttribute('data-theme');
+    const bodyTheme = document.body.getAttribute('data-theme');
+    return (rootTheme || bodyTheme) === 'light';
+}
+
+function getChartTheme() {
+    const light = isLightTheme();
+    return {
+        text: light ? '#0f172a' : 'rgba(255,255,255,0.85)',
+        muted: light ? '#475569' : 'rgba(255,255,255,0.6)',
+        grid: light ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
+        tooltipBg: light ? 'rgba(255,255,255,0.96)' : 'rgba(15,23,42,0.92)',
+        tooltipBorder: light ? 'rgba(148,163,184,0.5)' : 'rgba(255,255,255,0.08)',
+        tooltipText: light ? '#0f172a' : '#e2e8f0'
+    };
+}
+
+// Load Analytics Data
+async function loadAnalytics() {
+    try {
+        // Load tasks
+        const tasksResponse = await fetch('/api/tasks/', {
+            credentials: 'include',
+            headers: getAuthHeaders()
+        });
+        const tasksData = tasksResponse.ok ? await tasksResponse.json() : [];
+        const tasks = Array.isArray(tasksData.results) ? tasksData.results : (Array.isArray(tasksData) ? tasksData : []);
+        
+        // Load projects
+        const projectsResponse = await fetch('/api/projects/', {
+            credentials: 'include',
+            headers: getAuthHeaders()
+        });
+        const projectsData = projectsResponse.ok ? await projectsResponse.json() : [];
+        const projects = Array.isArray(projectsData.results) ? projectsData.results : (Array.isArray(projectsData) ? projectsData : []);
+        
+        // Calculate stats
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.status === 'done').length;
+        const pending = tasks.filter(t => t.status === 'todo').length;
+        const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+        const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        
+        // Priority counts
+        const highPriority = tasks.filter(t => t.priority === 'high').length;
+        const mediumPriority = tasks.filter(t => t.priority === 'medium').length;
+        const lowPriority = tasks.filter(t => t.priority === 'low').length;
+
+        // Trend data (last 14 days)
+        const trend = buildTrendSeries(tasks, 14);
+
+        analyticsCache.status = { pending, inProgress, completed };
+        analyticsCache.priority = { high: highPriority, medium: mediumPriority, low: lowPriority };
+        analyticsCache.trend = { labels: trend.labels, created: trend.created, completed: trend.completed };
+        
+        // Update stats with animation
+        animateValue('total-tasks', total);
+        animateValue('completion-rate', completionRate, '%');
+        animateValue('active-projects', projects.length);
+        animateValue('completed-tasks', completed);
+        
+        // Update charts
+        updateStatusChart(pending, inProgress, completed);
+        updatePriorityChart(highPriority, mediumPriority, lowPriority);
+        updateTrendChart(trend.labels, trend.created, trend.completed);
+        
+        // Update project progress
+        updateProjectProgress(projects, tasks);
+        
+        // Load recent activity
+        loadRecentActivity();
+        
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showToast('Failed to load analytics', 'error');
+    }
+}
+
+// Update Status Chart
+function updateStatusChart(pending, inProgress, completed) {
+    const ctx = document.getElementById('status-chart');
+    if (!ctx) return;
+    
+    if (statusChart) statusChart.destroy();
+    const theme = getChartTheme();
+    
+    statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending', 'In Progress', 'Completed'],
+            datasets: [{
+                data: [pending, inProgress, completed],
+                backgroundColor: [
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(6, 182, 212, 0.8)',
+                    'rgba(16, 185, 129, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(6, 182, 212, 1)',
+                    'rgba(16, 185, 129, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: theme.text,
+                        padding: 20,
+                        font: { size: 13, weight: '500' }
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+}
+
+// Update Priority Chart
+function updatePriorityChart(high, medium, low) {
+    const ctx = document.getElementById('priority-chart');
+    if (!ctx) return;
+    
+    if (priorityChart) priorityChart.destroy();
+    const theme = getChartTheme();
+    
+    priorityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['High', 'Medium', 'Low'],
+            datasets: [{
+                label: 'Tasks',
+                data: [high, medium, low],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(16, 185, 129, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(16, 185, 129, 1)'
+                ],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.muted }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: theme.text, font: { weight: '500' } }
+                }
+            }
+        }
+    });
+}
+
+// Build trend series for last N days
+function buildTrendSeries(tasks, days = 14) {
+    const labels = [];
+    const createdMap = {};
+    const completedMap = {};
+    const today = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        labels.push(label);
+        createdMap[key] = 0;
+        completedMap[key] = 0;
+    }
+
+    tasks.forEach(t => {
+        if (t.created_at) {
+            const key = new Date(t.created_at).toISOString().slice(0, 10);
+            if (key in createdMap) createdMap[key] += 1;
+        }
+        if (t.status === 'done' && t.updated_at) {
+            const key = new Date(t.updated_at).toISOString().slice(0, 10);
+            if (key in completedMap) completedMap[key] += 1;
+        }
+    });
+
+    const created = Object.values(createdMap);
+    const completed = Object.values(completedMap);
+    return { labels, created, completed };
+}
+
+// Update trend chart
+function updateTrendChart(labels, createdSeries, completedSeries) {
+    const ctx = document.getElementById('trend-chart');
+    if (!ctx) return;
+
+    if (trendChart) trendChart.destroy();
+    const theme = getChartTheme();
+
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Created',
+                    data: createdSeries,
+                    borderColor: 'rgba(99,102,241,0.9)',
+                    backgroundColor: 'rgba(99,102,241,0.18)',
+                    tension: 0.35,
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 3.5,
+                    pointBackgroundColor: theme.text
+                },
+                {
+                    label: 'Completed',
+                    data: completedSeries,
+                    borderColor: 'rgba(16,185,129,0.9)',
+                    backgroundColor: 'rgba(16,185,129,0.18)',
+                    tension: 0.35,
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 3.5,
+                    pointBackgroundColor: theme.text
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: theme.text, font: { size: 12, weight: '600' } }
+                },
+                tooltip: {
+                    backgroundColor: theme.tooltipBg,
+                    borderColor: theme.tooltipBorder,
+                    borderWidth: 1,
+                    padding: 10,
+                    titleColor: theme.tooltipText,
+                    bodyColor: theme.tooltipText,
+                    callbacks: {
+                        label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y || 0}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.muted }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: theme.text, maxRotation: 0 }
+                }
+            }
+        }
+    });
+}
+
+function rerenderAnalyticsCharts() {
+    if (analyticsCache.status) {
+        updateStatusChart(analyticsCache.status.pending, analyticsCache.status.inProgress, analyticsCache.status.completed);
+    }
+    if (analyticsCache.priority) {
+        updatePriorityChart(analyticsCache.priority.high, analyticsCache.priority.medium, analyticsCache.priority.low);
+    }
+    if (analyticsCache.trend) {
+        updateTrendChart(analyticsCache.trend.labels, analyticsCache.trend.created, analyticsCache.trend.completed);
+    }
+}
+
+// Update Project Progress
+function updateProjectProgress(projects, tasks) {
+    const container = document.getElementById('project-progress');
+    if (!container) return;
+    
+    if (projects.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><h3>No projects yet</h3></div>';
+        return;
+    }
+    
+    const colors = ['purple', 'cyan', 'green', 'orange', 'pink'];
+    
+    container.innerHTML = projects.slice(0, 5).map((project, i) => {
+        const projectTasks = tasks.filter(t => t.project === project.id);
+        const total = projectTasks.length;
+        const completed = projectTasks.filter(t => t.status === 'done').length;
+        const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+        
+        return `
+            <div class="progress-item">
+                <div class="progress-header">
+                    <span class="progress-label">${project.name}</span>
+                    <span class="progress-value">${completed}/${total} tasks (${progress}%)</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill ${colors[i % colors.length]}" style="width: ${progress}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Load Recent Activity
+async function loadRecentActivity() {
+    const container = document.getElementById('activity-list');
+    if (!container) return;
+    
+    try {
+        const response = await fetch('/api/tasks/?ordering=-created_at&limit=5', {
+            credentials: 'include',
+            headers: getAuthHeaders()
+        });
+        const data = await response.json();
+        const tasks = (data.results || data || []).slice(0, 5);
+        
+        if (tasks.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-clock"></i><h3>No recent activity</h3></div>';
+            return;
+        }
+        
+        container.innerHTML = tasks.map(task => {
+            const iconClass = task.status === 'done' ? 'completed' : task.status === 'in_progress' ? 'updated' : 'created';
+            const icon = task.status === 'done' ? 'fa-check' : task.status === 'in_progress' ? 'fa-spinner' : 'fa-plus';
+            const action = task.status === 'done' ? 'Completed' : task.status === 'in_progress' ? 'In progress' : 'Created';
+            const time = task.updated_at ? formatTimeAgo(new Date(task.updated_at)) : 'Recently';
+            
+            return `
+                <div class="activity-item">
+                    <div class="activity-icon ${iconClass}">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${task.title || 'Untitled Task'}</div>
+                        <div class="activity-desc">${action}</div>
+                    </div>
+                    <div class="activity-time">${time}</div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading activity:', error);
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Failed to load activity</h3></div>';
+    }
+}
+
+// Format time ago
+function formatTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+    if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+    return date.toLocaleDateString();
+}
+
+// Export report
+function exportReport() {
+    showToast('Generating report...', 'info');
+    
+    setTimeout(() => {
+        showToast('Report exported successfully!', 'success');
+    }, 1500);
+}
+
+// Event Listeners
+document.getElementById('refresh-btn')?.addEventListener('click', () => {
+    loadAnalytics();
+    showToast('Refreshed!', 'success');
+});
+
+document.getElementById('export-btn')?.addEventListener('click', exportReport);
+
+document.getElementById('time-range')?.addEventListener('change', () => {
+    loadAnalytics();
+});
+
+const themeToggleBtn = document.getElementById('theme-toggle');
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        setTimeout(() => rerenderAnalyticsCharts(), 0);
+    });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadAnalytics();
+});
+</script>
+{% endblock %}

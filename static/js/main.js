@@ -135,3 +135,71 @@ document.addEventListener('click', (ev) => {
     }
   } catch (_) {}
 });
+
+// Footer notification count + footer button wiring
+document.addEventListener('DOMContentLoaded', () => {
+  const footerBtn = document.getElementById('footer-notif-btn');
+  const footerCount = document.getElementById('footer-notif-count');
+
+  async function loadFooterNotifCount() {
+    try {
+      // Prefer built window.API if available
+      if (window.API && window.API.notifications && typeof window.API.notifications.getCount === 'function') {
+        const data = await window.API.notifications.getCount();
+        const count = data && (data.unread_count ?? data.count ?? 0);
+        if (footerCount) {
+          if (count > 0) {
+            footerCount.textContent = count > 99 ? '99+' : String(count);
+            footerCount.style.display = 'inline-block';
+          } else {
+            footerCount.style.display = 'none';
+          }
+        }
+      } else {
+        // Fallback: try fetching notifications and count unread
+        const resp = await fetch('/api/notifications/?page_size=1', { credentials: 'include' });
+        if (resp.ok) {
+          const d = await resp.json();
+          const unread = d.unread_count ?? (d.results ? d.results.filter(n => !n.is_read).length : 0);
+          if (footerCount) {
+            if (unread > 0) {
+              footerCount.textContent = unread > 99 ? '99+' : String(unread);
+              footerCount.style.display = 'inline-block';
+            } else {
+              footerCount.style.display = 'none';
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load footer notification count', e);
+    }
+  }
+
+  // Wire footer button to open notifications panel
+  if (footerBtn) {
+    footerBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        if (window.NotificationCenter && typeof window.NotificationCenter.openNotifications === 'function') {
+          window.NotificationCenter.openNotifications();
+        } else {
+          // try triggering existing header trigger
+          const hdr = document.getElementById('notifications-trigger');
+          hdr && hdr.click();
+        }
+      } catch (_) {}
+    });
+  }
+
+  // initial load + poll
+  loadFooterNotifCount();
+  setInterval(loadFooterNotifCount, 30000);
+
+  // Optional: toggle sidebar.expanded class when user toggles mobile/desktop open
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.addEventListener('mouseenter', () => sidebar.classList.add('expanded'));
+    sidebar.addEventListener('mouseleave', () => sidebar.classList.remove('expanded'));
+  }
+});

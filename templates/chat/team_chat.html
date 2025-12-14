@@ -1,0 +1,787 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}محادثات الفريق - Smart Task Manager{% endblock %}
+
+{% block content %}
+<div class="team-chat-layout">
+    <!-- Sidebar - Conversations List (mobile-only overlay) -->
+    <div class="conversations-sidebar mobile-only">
+        <div class="sidebar-header">
+            <h3>المحادثات</h3>
+            <button class="btn btn-primary btn-small" id="new-chat-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Search -->
+        <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input type="text" placeholder="بحث في المحادثات..." id="search-conversations">
+        </div>
+        
+        <!-- Tabs -->
+        <div class="chat-tabs">
+            <button class="chat-tab active" data-type="all">الكل</button>
+            <button class="chat-tab" data-type="private">خاص</button>
+            <button class="chat-tab" data-type="group">مجموعات</button>
+        </div>
+        
+        <!-- Conversations List -->
+        <div class="conversations-list" id="conversations-list">
+            <!-- Will be populated dynamically -->
+        </div>
+    </div>
+    <style>
+    /* Conversations sidebar: hide on desktop, show overlay on mobile */
+    .conversations-sidebar.mobile-only { display: none; }
+    @media (max-width: 1024px) {
+        .conversations-sidebar.mobile-only { display:flex !important; position: fixed; left: 0; top: 0; height: 100vh; z-index: 1200; transform: translateX(-100%); transition: transform 0.28s ease; width: 320px; background: var(--glass-bg); border-right:1px solid var(--glass-border); flex-direction:column; }
+        .conversations-sidebar.mobile-only.open { transform: translateX(0); }
+    }
+    </style>
+    
+    <!-- Main Chat Area -->
+    <div class="chat-main" id="chat-main">
+        <!-- Empty State -->
+        <div class="chat-empty-state" id="empty-state">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <h3>اختر محادثة</h3>
+            <p>اختر محادثة من القائمة أو ابدأ محادثة جديدة</p>
+        </div>
+        
+        <!-- Active Chat (hidden initially) -->
+        <div class="active-chat" id="active-chat" style="display: none;">
+            <!-- Chat Header -->
+            <div class="chat-header" id="chat-header">
+                <div class="chat-info">
+                    <div class="chat-avatar" id="chat-avatar">ف</div>
+                    <div>
+                        <h4 id="chat-name">اسم المحادثة</h4>
+                        <span class="chat-status" id="chat-status">متصل</span>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="icon-btn" title="مكالمة صوتية">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" title="مكالمة فيديو">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" title="معلومات">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Messages -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will be loaded here -->
+            </div>
+            
+            <!-- Input -->
+            <div class="chat-input-area">
+                <button class="icon-btn" title="إرفاق ملف">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                </button>
+                <input type="text" class="message-input" id="message-input" placeholder="اكتب رسالتك...">
+                <button class="icon-btn" title="إيموجي">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                </button>
+                <button class="send-btn" id="send-message-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.team-chat-layout {
+    display: flex;
+    height: calc(100vh - 120px);
+    gap: 20px;
+}
+
+.conversations-sidebar {
+    width: 340px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+}
+
+.search-box input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+}
+
+.search-box input::placeholder {
+    color: var(--text-muted);
+}
+
+.chat-tabs {
+    display: flex;
+    padding: 0 16px;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.chat-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.chat-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 12px;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 6px;
+}
+
+.conversation-item:hover,
+.conversation-item.active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.conversation-item.active {
+    border: 1px solid var(--primary);
+}
+
+.conv-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--glow));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 16px;
+}
+
+.conv-avatar.group {
+    background: linear-gradient(135deg, var(--accent), #ff9a8b);
+}
+
+.conv-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conv-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conv-last-msg {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conv-meta {
+    text-align: left;
+}
+
+.conv-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.conv-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 4px;
+}
+
+/* Main Chat Area */
+.chat-main {
+    flex: 1;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.chat-empty-state h3 {
+    margin: 20px 0 8px;
+    color: var(--text-primary);
+}
+
+.active-chat {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.chat-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.chat-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--glow));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+}
+
+.chat-info h4 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.chat-status {
+    font-size: 12px;
+    color: var(--glow);
+}
+
+.chat-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--primary);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message {
+    display: flex;
+    gap: 10px;
+    max-width: 70%;
+}
+
+.message.sent {
+    align-self: flex-start;
+    flex-direction: row-reverse;
+}
+
+.message.received {
+    align-self: flex-end;
+}
+
+.msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.msg-content {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 16px;
+    border-radius: 16px;
+}
+
+.message.sent .msg-content {
+    background: rgba(74, 144, 226, 0.25);
+    border: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.msg-text {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.msg-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.chat-input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.message-input {
+    flex: 1;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+}
+
+.message-input:focus {
+    border-color: var(--primary);
+}
+
+.message-input::placeholder {
+    color: var(--text-muted);
+}
+
+.send-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--glow));
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.send-btn:hover {
+    transform: scale(1.05);
+}
+</style>
+{% endblock %}
+
+{% block modals %}
+<!-- New Chat Modal -->
+<div class="modal" id="new-chat-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">محادثة جديدة</h2>
+            <button class="modal-close" onclick="closeModal('new-chat-modal')">×</button>
+        </div>
+        
+        <div class="chat-type-selector">
+            <button class="type-btn active" data-type="private">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                محادثة خاصة
+            </button>
+            <button class="type-btn" data-type="group">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                مجموعة
+            </button>
+        </div>
+        
+        <form id="new-chat-form">
+            {% csrf_token %}
+            <div class="form-group" id="group-name-field" style="display: none;">
+                <label class="form-label">اسم المجموعة</label>
+                <input type="text" name="group_name" class="form-input" placeholder="أدخل اسم المجموعة">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">اختر الأعضاء</label>
+                <div class="members-list" id="members-list">
+                    <!-- Will be populated with team members -->
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('new-chat-modal')">إلغاء</button>
+                <button type="submit" class="btn btn-primary">بدء المحادثة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.chat-type-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.type-btn {
+    flex: 1;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--glass-border);
+    border-radius: 16px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: var(--transition);
+}
+
+.type-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.type-btn.active {
+    border-color: var(--primary);
+    background: rgba(74, 144, 226, 0.15);
+    color: var(--primary);
+}
+
+.members-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.member-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.member-item.selected {
+    background: rgba(74, 144, 226, 0.2);
+    border: 1px solid var(--primary);
+}
+
+.member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--glow));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.member-role {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auth Helper
+function getAuthHeaders() {
+    const token = localStorage.getItem('accessToken');
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+// Sample data (will be replaced with API calls)
+const conversations = [
+    { id: 1, name: 'أحمد محمد', type: 'private', lastMsg: 'تمام، هنكمل بكرة', time: '2:30 م', unread: 2 },
+    { id: 2, name: 'فريق التطوير', type: 'group', lastMsg: 'خلصت المهمة دي', time: '1:15 م', unread: 0 },
+    { id: 3, name: 'سارة أحمد', type: 'private', lastMsg: 'شكراً جزيلاً', time: '12:00 م', unread: 0 },
+    { id: 4, name: 'فريق التسويق', type: 'group', lastMsg: 'الاجتماع الساعة 4', time: 'أمس', unread: 5 },
+];
+
+const teamMembers = [
+    { id: 1, name: 'أحمد محمد', role: 'مطور', initials: 'أم' },
+    { id: 2, name: 'سارة أحمد', role: 'مصممة', initials: 'سأ' },
+    { id: 3, name: 'محمد علي', role: 'مدير المشروع', initials: 'مع' },
+    { id: 4, name: 'نور حسن', role: 'مختبر', initials: 'نح' },
+];
+
+// Render conversations
+function renderConversations(filter = 'all') {
+    const list = document.getElementById('conversations-list');
+    const filtered = filter === 'all' ? conversations : conversations.filter(c => c.type === filter);
+    
+    list.innerHTML = filtered.map(conv => `
+        <div class="conversation-item" data-id="${conv.id}" onclick="openConversation(${conv.id})">
+            <div class="conv-avatar ${conv.type === 'group' ? 'group' : ''}">${conv.name.charAt(0)}</div>
+            <div class="conv-info">
+                <div class="conv-name">${conv.name}</div>
+                <div class="conv-last-msg">${conv.lastMsg}</div>
+            </div>
+            <div class="conv-meta">
+                <div class="conv-time">${conv.time}</div>
+                ${conv.unread > 0 ? `<div class="conv-badge">${conv.unread}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Open conversation
+function openConversation(id) {
+    const conv = conversations.find(c => c.id === id);
+    if (!conv) return;
+    
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('active-chat').style.display = 'flex';
+    
+    document.getElementById('chat-name').textContent = conv.name;
+    document.getElementById('chat-avatar').textContent = conv.name.charAt(0);
+    
+    // Mark as active
+    document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[data-id="${id}"]`)?.classList.add('active');
+    
+    // Load sample messages
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML = `
+        <div class="message received">
+            <div class="msg-avatar">${conv.name.charAt(0)}</div>
+            <div class="msg-content">
+                <div class="msg-text">مرحباً، كيف حالك؟</div>
+                <div class="msg-time">2:25 م</div>
+            </div>
+        </div>
+        <div class="message sent">
+            <div class="msg-avatar">أ</div>
+            <div class="msg-content">
+                <div class="msg-text">الحمد لله، أنا بخير. كيف سير العمل؟</div>
+                <div class="msg-time">2:27 م</div>
+            </div>
+        </div>
+        <div class="message received">
+            <div class="msg-avatar">${conv.name.charAt(0)}</div>
+            <div class="msg-content">
+                <div class="msg-text">${conv.lastMsg}</div>
+                <div class="msg-time">${conv.time}</div>
+            </div>
+        </div>
+    `;
+}
+
+// Modal functions
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+// Render team members in modal
+function renderMembers() {
+    const list = document.getElementById('members-list');
+    list.innerHTML = teamMembers.map(member => `
+        <div class="member-item" data-id="${member.id}" onclick="toggleMember(this)">
+            <div class="member-avatar">${member.initials}</div>
+            <div class="member-info">
+                <div class="member-name">${member.name}</div>
+                <div class="member-role">${member.role}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleMember(el) {
+    el.classList.toggle('selected');
+}
+
+// Event Listeners
+document.getElementById('new-chat-btn').addEventListener('click', () => {
+    renderMembers();
+    openModal('new-chat-modal');
+});
+
+document.querySelectorAll('.chat-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderConversations(tab.dataset.type);
+    });
+});
+
+document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('group-name-field').style.display = 
+            btn.dataset.type === 'group' ? 'block' : 'none';
+    });
+});
+
+// Send message
+document.getElementById('send-message-btn').addEventListener('click', () => {
+    const input = document.getElementById('message-input');
+    if (!input.value.trim()) return;
+    
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML += `
+        <div class="message sent">
+            <div class="msg-avatar">أ</div>
+            <div class="msg-content">
+                <div class="msg-text">${input.value}</div>
+                <div class="msg-time">الآن</div>
+            </div>
+        </div>
+    `;
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+});
+
+document.getElementById('message-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('send-message-btn').click();
+    }
+});
+
+// Initialize
+renderConversations();
+</script>
+{% endblock %}

@@ -1,0 +1,1056 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tasks | Smart Task Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/legacy/base.css' %}">
+<link rel="stylesheet" href="{% static 'css/legacy/theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/legacy/main.css' %}">
+{% endblock %}
+
+{% block content %}
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="header-left">
+            <h1>My Tasks</h1>
+            <p>Manage and track your tasks efficiently</p>
+        </div>
+        <div class="header-right">
+            <button class="icon-button" id="search-btn" title="Search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </button>
+            <button class="icon-button" id="filter-btn" title="Filter">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+            </button>
+            <button class="icon-button" id="view-toggle-btn" title="Toggle View">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+            </button>
+            <button class="primary-button" id="new-task-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Task
+            </button>
+        </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div id="search-container" class="search-container" style="display: none;">
+        <input type="text" id="search-input" class="search-input" placeholder="Search tasks by title or description...">
+        <button class="search-close" onclick="closeSearch()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Tasks Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <h3 id="total-tasks-count">0</h3>
+                <p>Total Tasks</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-orange), var(--accent-red));">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <h3 id="pending-tasks-count">0</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <h3 id="progress-tasks-count">0</h3>
+                <p>In Progress</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <h3 id="completed-tasks-count">0</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <button class="tab active" data-filter="all">
+            <span>All Tasks</span>
+            <span class="tab-count" id="count-all">0</span>
+        </button>
+        <button class="tab" data-filter="pending">
+            <span>Pending</span>
+            <span class="tab-count" id="count-pending">0</span>
+        </button>
+        <button class="tab" data-filter="in_progress">
+            <span>In Progress</span>
+            <span class="tab-count" id="count-progress">0</span>
+        </button>
+        <button class="tab" data-filter="completed">
+            <span>Completed</span>
+            <span class="tab-count" id="count-completed">0</span>
+        </button>
+        <button class="tab" data-filter="high">
+            <span>High Priority</span>
+            <span class="tab-count" id="count-high">0</span>
+        </button>
+    </div>
+
+    <!-- Tasks Grid -->
+    <div id="tasks-container" class="tasks-container">
+        <div id="loading-spinner" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading tasks...</p>
+        </div>
+        
+        <div id="tasks-grid" class="tasks-grid" style="display: none;"></div>
+        
+        <div id="no-tasks" class="no-tasks-found" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin: 0 auto 20px; opacity: 0.5;">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            <p>No tasks found</p>
+            <button class="primary-button" onclick="document.getElementById('new-task-btn').click()">
+                Create Your First Task
+            </button>
+        </div>
+        
+        <div id="error-message" class="error-message" style="display: none;">
+            <p>Failed to load tasks. Please try again.</p>
+            <button class="btn-small" onclick="loadTasks()">Retry</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modals %}
+    <!-- New Task Modal -->
+    <div class="modal" id="new-task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Task</h2>
+                <button class="modal-close" onclick="closeModal('new-task-modal')">&times;</button>
+            </div>
+            <form id="new-task-form">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" name="title" class="form-input" placeholder="Enter task title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" class="form-textarea" placeholder="Enter task description" rows="4"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select name="priority" class="form-select" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" class="form-select" required>
+                            <option value="pending" selected>Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" name="due_date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Project</label>
+                        <select name="project" class="form-select" id="project-select">
+                            <option value="">No Project</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('new-task-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal" id="edit-task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Task</h2>
+                <button class="modal-close" onclick="closeModal('edit-task-modal')">&times;</button>
+            </div>
+            <form id="edit-task-form">
+                <input type="hidden" name="task_id" id="edit-task-id">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" name="title" id="edit-title" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" id="edit-description" class="form-textarea" rows="4"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select name="priority" id="edit-priority" class="form-select" required>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" id="edit-status" class="form-select" required>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" name="due_date" id="edit-due-date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Project</label>
+                        <select name="project" id="edit-project" class="form-select">
+                            <option value="">No Project</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('edit-task-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Advanced Filter Modal -->
+    <div class="modal" id="filter-modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Advanced Filters</h2>
+                <button class="modal-close" onclick="closeModal('filter-modal')">&times;</button>
+            </div>
+            <form id="filter-form">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select name="priority" class="form-select">
+                        <option value="">All Priorities</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Project</label>
+                    <select name="project" class="form-select" id="filter-project">
+                        <option value="">All Projects</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Due Date Range</label>
+                    <div class="form-row">
+                        <input type="date" name="date_from" class="form-input" placeholder="From">
+                        <input type="date" name="date_to" class="form-input" placeholder="To">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Delete Task</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <p style="margin-bottom: 24px; color: var(--text-secondary);">Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete Task</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(6, 182, 212, 0.2);
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-icon svg {
+        width: 28px;
+        height: 28px;
+        color: white;
+    }
+
+    .stat-info h3 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .stat-info p {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .search-container {
+        position: relative;
+        margin-bottom: 24px;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 16px 50px 16px 20px;
+        font-size: 15px;
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.12);
+        border-color: var(--accent-cyan);
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+    }
+
+    .search-close {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-close:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+
+    .search-close svg {
+        width: 18px;
+        height: 18px;
+        color: var(--text-secondary);
+    }
+
+    .tab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-count {
+        padding: 2px 8px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .tab.active .tab-count {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(6, 182, 212, 0.2);
+        border-top-color: var(--accent-cyan);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .task-card.completed {
+        opacity: 0.7;
+    }
+
+    .task-card.completed .task-title {
+        text-decoration: line-through;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-info h3 {
+            font-size: 24px;
+        }
+    }
+</style>
+
+<script>
+    let allTasks = [];
+    let currentFilter = 'all';
+    let taskToDelete = null;
+    let viewMode = 'grid'; // grid or list
+
+    // Auth shim to avoid ReferenceError if global isn't present
+    function checkAuth() {
+        if (typeof window.checkAuthentication === 'function') {
+            return window.checkAuthentication();
+        }
+        // Default allow; API will still enforce auth
+        return true;
+    }
+
+    // Status mapping helpers
+    const statusMapBackendToFrontend = {
+        'todo': 'pending',
+        'in_progress': 'in_progress',
+        'done': 'completed'
+    };
+    const statusMapFrontendToBackend = {
+        'pending': 'todo',
+        'in_progress': 'in_progress',
+        'completed': 'done'
+    };
+    function toFrontendStatus(status) {
+        return statusMapBackendToFrontend[status] || status;
+    }
+    function toBackendStatus(status) {
+        return statusMapFrontendToBackend[status] || status;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!checkAuth()) return;
+        initializePage();
+    });
+
+    function initializePage() {
+        loadTasks();
+        loadProjectsForDropdowns();
+
+        // Check if we need to open the new task modal
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('new') === 'true') {
+            openModal('new-task-modal');
+        }
+
+        // Event listeners
+        document.getElementById('new-task-btn').addEventListener('click', () => openModal('new-task-modal'));
+        document.getElementById('filter-btn').addEventListener('click', () => openModal('filter-modal'));
+        document.getElementById('search-btn').addEventListener('click', toggleSearch);
+        document.getElementById('new-task-form').addEventListener('submit', handleCreateTask);
+        document.getElementById('edit-task-form').addEventListener('submit', handleEditTask);
+        document.getElementById('filter-form').addEventListener('submit', handleAdvancedFilter);
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', handleSearch);
+
+        // Filter tabs
+        document.querySelectorAll('.filter-tabs .tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tabs .tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                filterTasks();
+            });
+        });
+    }
+
+    // Toggle search bar
+    function toggleSearch() {
+        const searchContainer = document.getElementById('search-container');
+        const searchInput = document.getElementById('search-input');
+        
+        if (searchContainer.style.display === 'none') {
+            searchContainer.style.display = 'block';
+            searchInput.focus();
+        } else {
+            closeSearch();
+        }
+    }
+
+    function closeSearch() {
+        const searchContainer = document.getElementById('search-container');
+        const searchInput = document.getElementById('search-input');
+        searchContainer.style.display = 'none';
+        searchInput.value = '';
+        filterTasks();
+    }
+
+    // Search tasks
+    function handleSearch(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredTasks = allTasks.filter(task => 
+            task.title.toLowerCase().includes(searchTerm) ||
+            (task.description && task.description.toLowerCase().includes(searchTerm))
+        );
+        displayTasks(filteredTasks);
+        updateTabCounts(filteredTasks);
+    }
+
+    // Load tasks from API
+    async function loadTasks() {
+        showLoading();
+
+        try {
+            const data = await window.API.tasks.getAll({ limit: 1000 });
+            const raw = data.results || data;
+            // Normalize statuses to frontend values for consistent UI/filters
+            allTasks = (Array.isArray(raw) ? raw : []).map(t => ({
+                ...t,
+                status: toFrontendStatus(t.status)
+            }));
+            
+            updateStats();
+            updateTabCounts(allTasks);
+            displayTasks(allTasks);
+        } catch (error) {
+            console.error('Failed to load tasks:', error);
+            showError();
+        }
+    }
+
+    function showLoading() {
+        document.getElementById('loading-spinner').style.display = 'block';
+        document.getElementById('tasks-grid').style.display = 'none';
+        document.getElementById('no-tasks').style.display = 'none';
+        document.getElementById('error-message').style.display = 'none';
+    }
+
+    function showError() {
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('tasks-grid').style.display = 'none';
+        document.getElementById('no-tasks').style.display = 'none';
+        document.getElementById('error-message').style.display = 'block';
+    }
+
+    // Update statistics
+    function updateStats() {
+        const total = allTasks.length;
+        const pending = allTasks.filter(t => t.status === 'pending').length;
+        const inProgress = allTasks.filter(t => t.status === 'in_progress').length;
+        const completed = allTasks.filter(t => t.status === 'completed').length;
+
+        document.getElementById('total-tasks-count').textContent = total;
+        document.getElementById('pending-tasks-count').textContent = pending;
+        document.getElementById('progress-tasks-count').textContent = inProgress;
+        document.getElementById('completed-tasks-count').textContent = completed;
+    }
+
+    // Update tab counts
+    function updateTabCounts(tasks) {
+        document.getElementById('count-all').textContent = tasks.length;
+        document.getElementById('count-pending').textContent = tasks.filter(t => t.status === 'pending').length;
+        document.getElementById('count-progress').textContent = tasks.filter(t => t.status === 'in_progress').length;
+        document.getElementById('count-completed').textContent = tasks.filter(t => t.status === 'completed').length;
+        document.getElementById('count-high').textContent = tasks.filter(t => t.priority === 'high').length;
+    }
+
+    // Display tasks
+    function displayTasks(tasks) {
+        const tasksContainer = document.getElementById('tasks-grid');
+        
+        document.getElementById('loading-spinner').style.display = 'none';
+        
+        if (!tasks || tasks.length === 0) {
+            document.getElementById('tasks-grid').style.display = 'none';
+            document.getElementById('no-tasks').style.display = 'block';
+            return;
+        }
+
+        document.getElementById('no-tasks').style.display = 'none';
+        document.getElementById('tasks-grid').style.display = 'grid';
+
+        tasksContainer.innerHTML = tasks.map(task => createTaskCard(task)).join('');
+    }
+
+    // Create task card
+    function createTaskCard(task) {
+        const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+        
+        return `
+            <div class="task-card ${task.status === 'completed' ? 'completed' : ''}" data-task-id="${task.id}">
+                <div class="task-header">
+                    <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                    <span class="task-priority priority-${task.priority}">${task.priority.toUpperCase()}</span>
+                </div>
+                
+                ${task.description ? `<p class="task-description">${escapeHtml(task.description)}</p>` : ''}
+                
+                <div class="task-meta">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Status: <strong>${task.status.replace('_', ' ')}</strong>
+                    </span>
+                    ${task.due_date ? `
+                        <span style="display: flex; align-items: center; gap: 8px; ${isOverdue ? 'color: var(--accent-red);' : ''}">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Due: ${formatDate(task.due_date)} ${isOverdue ? '(Overdue)' : ''}
+                        </span>
+                    ` : ''}
+                    ${task.project_name ? `
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Project: <strong>${escapeHtml(task.project_name)}</strong>
+                        </span>
+                    ` : ''}
+                </div>
+                
+                <div class="task-footer">
+                    <div class="task-actions">
+                        ${task.status !== 'completed' ? `
+                            <button class="btn-small btn-success" onclick="completeTask('${task.id}')" title="Mark as Complete">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Complete
+                            </button>
+                        ` : ''}
+                        <button class="btn-small" onclick="editTask('${task.id}')" title="Edit Task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Edit
+                        </button>
+                        <button class="btn-small btn-danger" onclick="openDeleteModal('${task.id}')" title="Delete Task">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Filter tasks based on current filter
+    function filterTasks() {
+        let filteredTasks = allTasks;
+
+        if (currentFilter === 'pending') {
+            filteredTasks = allTasks.filter(task => task.status === 'pending');
+        } else if (currentFilter === 'in_progress') {
+            filteredTasks = allTasks.filter(task => task.status === 'in_progress');
+        } else if (currentFilter === 'completed') {
+            filteredTasks = allTasks.filter(task => task.status === 'completed');
+        } else if (currentFilter === 'high') {
+            filteredTasks = allTasks.filter(task => task.priority === 'high');
+        }
+
+        displayTasks(filteredTasks);
+        updateTabCounts(filteredTasks);
+    }
+
+    // Load projects for dropdowns
+    async function loadProjectsForDropdowns() {
+        try {
+            const data = await window.API.projects.getAll({ limit: 1000 });
+            const projects = data.results || data;
+            
+            const projectSelects = ['project-select', 'edit-project', 'filter-project'];
+            projectSelects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    const currentOptions = select.querySelector('option[value=""]');
+                    select.innerHTML = currentOptions.outerHTML + projects.map(project => 
+                        `<option value="${project.id}">${escapeHtml(project.name)}</option>`
+                    ).join('');
+                }
+            });
+        } catch (error) {
+            console.error('Failed to load projects:', error);
+        }
+    }
+
+    // Handle create task
+    async function handleCreateTask(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const taskData = Object.fromEntries(formData.entries());
+
+        // Map status to backend values
+        if (taskData.status) {
+            taskData.status = toBackendStatus(taskData.status);
+        }
+
+        // Remove empty project value
+        if (!taskData.project) {
+            delete taskData.project;
+        }
+
+        // Remove empty due_date
+        if (!taskData.due_date) {
+            delete taskData.due_date;
+        }
+
+        try {
+            await window.API.tasks.create(taskData);
+            closeModal('new-task-modal');
+            e.target.reset();
+            await loadTasks();
+            showNotification('Task created successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to create task:', error);
+            showNotification('Failed to create task. Please try again.', 'error');
+        }
+    }
+
+    // Edit task
+    async function editTask(taskId) {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        document.getElementById('edit-task-id').value = task.id;
+        document.getElementById('edit-title').value = task.title;
+        document.getElementById('edit-description').value = task.description || '';
+        document.getElementById('edit-priority').value = task.priority;
+        document.getElementById('edit-status').value = toFrontendStatus(task.status);
+        document.getElementById('edit-due-date').value = task.due_date || '';
+        document.getElementById('edit-project').value = task.project || '';
+
+        openModal('edit-task-modal');
+    }
+
+    // Handle edit task
+    async function handleEditTask(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const taskData = Object.fromEntries(formData.entries());
+        const taskId = taskData.task_id;
+        delete taskData.task_id;
+
+        // Remove empty values
+        if (!taskData.project) {
+            delete taskData.project;
+        }
+        if (!taskData.due_date) {
+            delete taskData.due_date;
+        }
+
+        // Map status to backend values
+        if (taskData.status) {
+            taskData.status = toBackendStatus(taskData.status);
+        }
+
+        try {
+            await window.API.tasks.patch(taskId, taskData);
+            closeModal('edit-task-modal');
+            await loadTasks();
+            showNotification('Task updated successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to update task:', error);
+            showNotification('Failed to update task. Please try again.', 'error');
+        }
+    }
+
+    // Complete task
+    async function completeTask(taskId) {
+        try {
+            await window.API.tasks.patch(taskId, { status: 'done' });
+            await loadTasks();
+            showNotification('Task marked as completed!', 'success');
+        } catch (error) {
+            console.error('Failed to complete task:', error);
+            showNotification('Failed to complete task. Please try again.', 'error');
+        }
+    }
+
+    // Delete task
+    function openDeleteModal(taskId) {
+        taskToDelete = taskId;
+        document.getElementById('delete-modal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        taskToDelete = null;
+        document.getElementById('delete-modal').classList.remove('active');
+    }
+
+    async function confirmDelete() {
+        if (!taskToDelete) return;
+
+        try {
+            await window.API.tasks.delete(taskToDelete);
+            closeDeleteModal();
+            await loadTasks();
+            showNotification('Task deleted successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to delete task:', error);
+            showNotification('Failed to delete task. Please try again.', 'error');
+        }
+    }
+
+    // Handle advanced filter form
+    function handleAdvancedFilter(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const filters = Object.fromEntries(formData.entries());
+
+        let filteredTasks = allTasks;
+
+        if (filters.status) {
+            filteredTasks = filteredTasks.filter(task => task.status === filters.status);
+        }
+        if (filters.priority) {
+            filteredTasks = filteredTasks.filter(task => task.priority === filters.priority);
+        }
+        if (filters.project) {
+            filteredTasks = filteredTasks.filter(task => task.project == filters.project);
+        }
+        if (filters.date_from) {
+            filteredTasks = filteredTasks.filter(task => 
+                task.due_date && new Date(task.due_date) >= new Date(filters.date_from)
+            );
+        }
+        if (filters.date_to) {
+            filteredTasks = filteredTasks.filter(task => 
+                task.due_date && new Date(task.due_date) <= new Date(filters.date_to)
+            );
+        }
+
+        displayTasks(filteredTasks);
+        updateTabCounts(filteredTasks);
+        closeModal('filter-modal');
+        
+        // Reset current filter if advanced filters applied
+        if (filters.status || filters.priority || filters.project || filters.date_from || filters.date_to) {
+            document.querySelectorAll('.filter-tabs .tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.filter-tabs .tab[data-filter="all"]').classList.add('active');
+            currentFilter = 'all';
+        }
+    }
+
+    // Reset filters
+    function resetFilters() {
+        document.getElementById('filter-form').reset();
+        currentFilter = 'all';
+        document.querySelectorAll('.filter-tabs .tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.filter-tabs .tab[data-filter="all"]').classList.add('active');
+        displayTasks(allTasks);
+        updateTabCounts(allTasks);
+        closeModal('filter-modal');
+    }
+
+    // Open modal
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+
+    // Close modal
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    // Format date
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const options = { month: 'short', day: 'numeric', year: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: ${type === 'success' ? 'rgba(16, 185, 129, 0.9)' : type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(6, 182, 212, 0.9)'};
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+            backdrop-filter: blur(10px);
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

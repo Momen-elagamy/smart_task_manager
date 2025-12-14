@@ -1,480 +1,953 @@
-{% extends 'base.html' %}
-
-{% block title %}Analytics - S T manger{% endblock %}
-
-{% block extra_head %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-{% endblock %}
-
-{% block main_content %}
-<header class="page-header">
-    <div class="header-left">
-        <h1>Analytics Dashboard</h1>
-        <p>Overview of your projects, tasks, and team performance</p>
-    </div>
-    <div class="header-right">
-        <button class="icon-button" id="refresh-btn" title="Refresh Analytics">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-        </button>
-        <button class="icon-button" id="export-btn" title="Export Analytics">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-        </button>
-        <button class="primary-button" onclick="window.location.href='/chat/'">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-            AI Insights
-        </button>
-    </div>
-</header>
-
-<!-- Stats Grid -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));">
-            <i class="fas fa-tasks" style="color:white; font-size:24px;"></i>
-        </div>
-        <div class="stat-info">
-            <h3 id="total-tasks">0</h3>
-            <p>Total Tasks</p>
-            <div class="stat-change change-positive">
-                <i class="fas fa-arrow-up"></i>
-                <span id="total-tasks-change">Loading...</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));">
-            <i class="fas fa-project-diagram" style="color:white; font-size:24px;"></i>
-        </div>
-        <div class="stat-info">
-            <h3 id="total-projects">0</h3>
-            <p>Total Projects</p>
-            <div class="stat-change change-positive">
-                <i class="fas fa-arrow-up"></i>
-                <span id="total-projects-change">Loading...</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));">
-            <i class="fas fa-users" style="color:white; font-size:24px;"></i>
-        </div>
-        <div class="stat-info">
-            <h3 id="active-members">0</h3>
-            <p>Active Members</p>
-            <div class="stat-change change-positive">
-                <i class="fas fa-arrow-up"></i>
-                <span id="active-members-change">Loading...</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, var(--accent-orange), var(--accent-red));">
-            <i class="fas fa-chart-pie" style="color:white; font-size:24px;"></i>
-        </div>
-        <div class="stat-info">
-            <h3 id="completion-rate">0%</h3>
-            <p>Avg Completion</p>
-            <div class="stat-change change-positive">
-                <i class="fas fa-arrow-up"></i>
-                <span id="completion-rate-change">Loading...</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Filter Tabs -->
-<div class="filter-tabs">
-    <button class="tab active" data-period="7days">Last 7 Days</button>
-    <button class="tab" data-period="30days">Last 30 Days</button>
-    <button class="tab" data-period="90days">Last 90 Days</button>
-    <button class="tab" data-period="year">This Year</button>
-</div>
-
-<!-- Charts Section -->
-<div class="charts-grid">
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3>Tasks by Status</h3>
-            <div class="chart-actions">
-                <button class="btn-secondary" onclick="changeChartView('tasks', 'doughnut', event)">Doughnut</button>
-                <button class="btn-primary" onclick="changeChartView('tasks', 'pie', event)">Pie</button>
-            </div>
-        </div>
-        <canvas id="tasks-status-chart" height="200"></canvas>
-    </div>
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3>Project Progress</h3>
-            <div class="chart-actions">
-                <button class="btn-secondary" onclick="changeChartView('progress', 'bar', event)">Bar</button>
-                <button class="btn-primary" onclick="changeChartView('progress', 'line', event)">Line</button>
-            </div>
-        </div>
-        <canvas id="project-progress-chart" height="200"></canvas>
-    </div>
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3>Task Trends</h3>
-            <div class="chart-actions">
-                <button class="btn-primary" onclick="refreshChart('trends')">Refresh</button>
-            </div>
-        </div>
-        <canvas id="task-trends-chart" height="200"></canvas>
-    </div>
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3>Team Performance</h3>
-            <div class="chart-actions">
-                <button class="btn-secondary" onclick="changeViewMode('department', event)">Department</button>
-                <button class="btn-primary" onclick="changeViewMode('individual', event)">Individual</button>
-            </div>
-        </div>
-        <canvas id="team-performance-chart" height="200"></canvas>
-    </div>
-</div>
-
-<!-- Recent Activity Section -->
-<div class="activity-section">
-    <h3>Recent Activity</h3>
-    <div class="activity-list" id="activity-list">
-        <div class="activity-item">
-            <div class="activity-icon">
-                <i class="fas fa-spinner fa-spin"></i>
-            </div>
-            <div class="activity-content">
-                <p>Loading recent activity...</p>
-                <span class="activity-time"></span>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block page_scripts %}
-<style>
-/* =========================
-   Shared layout & dark mode
-========================= */
-.stats-grid, .charts-grid {
-    display: grid;
-    gap: 20px;
-    margin-bottom: 32px;
-}
-.stats-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-.charts-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-
-.chart-card, .activity-section, .stat-card {
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(15px);
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 24px;
-    transition: all 0.3s ease;
-}
-.chart-card:hover, .activity-item:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(6, 182, 212, 0.2);
-    border-color: var(--accent-cyan);
-}
-
-/* Page header */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-.header-right { display: flex; gap: 0.75rem; align-items: center; }
-
-/* Buttons */
-.icon-button, .primary-button, .btn-primary, .btn-secondary {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-.icon-button { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius:10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); }
-.primary-button { padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); color: white; border-radius:12px; display:flex; align-items:center; gap:0.5rem; font-weight:600; }
-.btn-primary { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); color:white; border-radius:10px; padding:0.5rem 1rem; font-weight:600; border:none; }
-.btn-secondary { background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color: var(--text-secondary); border-radius:10px; padding:0.5rem 1rem; font-weight:500; }
-
-/* Tabs */
-.filter-tabs { display:flex; gap:8px; margin-bottom:24px; overflow-x:auto; padding-bottom:8px; }
-.tab { padding:10px 20px; background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color: var(--text-secondary); font-weight:500; cursor:pointer; }
-.tab.active { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); color:white; border-color:transparent; }
-
-/* Activity Section */
-.activity-section h3 { font-size:1.25rem; font-weight:600; color:var(--text-primary); margin-bottom:1.5rem; }
-.activity-list { display:flex; flex-direction:column; gap:1rem; }
-.activity-item { display:flex; align-items:flex-start; gap:1rem; padding:1rem; border-radius:12px; background: rgba(255,255,255,0.03); transition: all 0.3s ease; }
-.activity-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; background: rgba(6,182,212,0.1); color:var(--accent-cyan); flex-shrink:0; }
-.activity-content p { margin-bottom:0.25rem; color:var(--text-primary); }
-.activity-time { font-size:0.75rem; color:var(--text-muted); }
-
-/* Toast */
-.toast { position: fixed; top:24px; right:24px; padding:16px 24px; color:white; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.3); z-index:10000; font-weight:500; animation: slideInRight 0.3s ease; backdrop-filter:blur(10px); max-width:300px; }
-.toast-close { float:right; cursor:pointer; margin-left:10px; font-weight:bold; }
-@keyframes slideInRight { from{opacity:0; transform:translateX(100px);} to{opacity:1; transform:translateX(0);} }
-@keyframes slideOutRight { from{opacity:1; transform:translateX(0);} to{opacity:0; transform:translateX(100px);} }
-
-@media (max-width:768px){
-    .page-header { flex-direction:column; gap:1rem; align-items:flex-start; }
-    .header-right { width:100%; justify-content:space-between; }
-    .stats-grid { grid-template-columns:repeat(2,1fr); gap:16px; }
-    .chart-header { flex-direction:column; align-items:flex-start; gap:1rem; }
-    .chart-actions { width:100%; justify-content:flex-end; }
-}
-@media (max-width:480px){
-    .stats-grid { grid-template-columns:1fr !important; }
-}
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// =========================
-// Charts Initialization
-// =========================
-let tasksChart, progressChart, trendsChart, performanceChart;
-
-document.addEventListener('DOMContentLoaded', async function() {
-    initCharts();
-    await loadAnalytics();
-    await loadRecentActivity();
-    document.getElementById('refresh-btn').addEventListener('click', async () => { 
-        await loadAnalytics(); 
-        await loadRecentActivity();
-        showToast('Analytics refreshed','success'); 
-    });
-    document.getElementById('export-btn').addEventListener('click', exportAnalytics);
-
-    document.querySelectorAll('.filter-tabs .tab').forEach(tab=>{
-        tab.addEventListener('click',async function(){
-            document.querySelectorAll('.filter-tabs .tab').forEach(t=>t.classList.remove('active'));
-            this.classList.add('active');
-            await loadAnalytics(this.dataset.period);
-            showToast(`Showing data for: ${this.textContent}`,'info');
-        });
-    });
-});
-
-function initCharts(){
-    // Tasks Status
-    tasksChart = new Chart(document.getElementById('tasks-status-chart').getContext('2d'),{
-        type:'doughnut',
-        data:{ labels:['Done','In Progress','To Do'], datasets:[{ data:[0,0,0], backgroundColor:['#06b6d4','#a78bfa','#f472b6'], borderWidth:0 }] },
-        options:{ responsive:true, plugins:{ legend:{ labels:{ color:'#ffffff' }, position:'bottom' } } }
-    });
-
-    // Project Progress
-    progressChart = new Chart(document.getElementById('project-progress-chart').getContext('2d'),{
-        type:'bar',
-        data:{ labels:[], datasets:[{ label:'Completion %', data:[], backgroundColor:'#f97316', borderRadius:8 }] },
-        options:{ responsive:true, scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:value=>value+'%' , color:'#ffffff' } }, x:{ ticks:{ color:'#ffffff' } } } }
-    });
-
-    // Task Trends
-    trendsChart = new Chart(document.getElementById('task-trends-chart').getContext('2d'),{
-        type:'line',
-        data:{ labels:[], datasets:[{ label:'Tasks Completed', data:[], borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.1)', tension:0.3, fill:true }] },
-        options:{ responsive:true, plugins:{ legend:{ labels:{ color:'#ffffff' }, position:'bottom' } } }
-    });
-
-    // Team Performance
-    performanceChart = new Chart(document.getElementById('team-performance-chart').getContext('2d'),{
-        type:'radar',
-        data:{ labels:['Productivity','Quality','Collaboration','Creativity','Timeliness'], datasets:[{ label:'Team Performance', data:[0,0,0,0,0], backgroundColor:'rgba(139,92,246,0.2)', borderColor:'#8b5cf6', pointBackgroundColor:'#8b5cf6', pointBorderColor:'#fff', pointHoverBackgroundColor:'#fff', pointHoverBorderColor:'#8b5cf6' }] },
-        options:{ responsive:true, scales:{ r:{ pointLabels:{ color:'#ffffff' }, grid:{ color:'rgba(255,255,255,0.2)' }, angleLines:{ color:'rgba(255,255,255,0.1)' }, ticks:{ color:'#ffffff' } } } }
-    });
-}
-
-async function loadAnalytics(period='30days'){
-    // Fetch data
-    const [stats, projectsRaw, tasksRaw] = await Promise.all([
-        window.API.stats.getStats().catch(()=>({total_tasks:0,pending_tasks:0,in_progress_tasks:0,completed_tasks:0})),
-        window.API.projects.getAll().catch(()=>[]),
-        window.API.tasks.getAll().catch(()=>[])
-    ]);
-
-    const tasks = Array.isArray(tasksRaw) ? tasksRaw : (tasksRaw.results || []);
-    const projects = Array.isArray(projectsRaw) ? projectsRaw : (projectsRaw.results || []);
-
-    // Update stat cards
-    const total = stats.total_tasks || tasks.length || 0;
-    const completed = stats.completed_tasks || tasks.filter(t=>t.status==='done' || t.status==='completed').length;
-    const inProgress = stats.in_progress_tasks || tasks.filter(t=>t.status==='in_progress').length;
-    const pending = stats.pending_tasks || tasks.filter(t=>t.status==='todo' || t.status==='pending').length;
-
-    setAnimatedValue('total-tasks', total, false);
-    setAnimatedValue('total-projects', projects.length || 0, false);
-    // Active members approximated by unique assignees in tasks
-    const uniqueAssignees = new Set(
-        tasks
-          .map(t=> {
-              const a = t.assigned_to;
-              if (!a) return null;
-              return (typeof a === 'object' && a !== null) ? (a.id || a.pk || a.email || a.username) : a;
-          })
-          .filter(Boolean)
-    );
-    setAnimatedValue('active-members', uniqueAssignees.size, false);
-    const completionRate = total ? Math.round((completed/total)*100) : 0;
-    setAnimatedValue('completion-rate', completionRate, true);
-
-    // Update Tasks by Status chart
-    tasksChart.data.labels = ['Done','In Progress','To Do'];
-    tasksChart.data.datasets[0].data = [completed, inProgress, pending];
-    tasksChart.update();
-
-    // Project progress chart: completion % per project
-    const projectTaskMap = new Map();
-    tasks.forEach(t=>{
-        const projectField = t.project;
-        const pid = (projectField && typeof projectField === 'object') ? (projectField.id || projectField.pk) : projectField;
-        if(!pid) return;
-        if(!projectTaskMap.has(pid)) projectTaskMap.set(pid,{total:0,done:0});
-        const entry = projectTaskMap.get(pid);
-        entry.total += 1;
-        if(t.status==='done' || t.status==='completed') entry.done += 1;
-    });
-    const progressLabels = [];
-    const progressValues = [];
-    projects.forEach(p=>{
-        const entry = projectTaskMap.get(p.id) || {total:0,done:0};
-        const pct = entry.total ? Math.round((entry.done/entry.total)*100) : 0;
-        progressLabels.push(p.name || `Project ${p.id}`);
-        progressValues.push(pct);
-    });
-    progressChart.data.labels = progressLabels.slice(0, 12);
-    progressChart.data.datasets[0].data = progressValues.slice(0, 12);
-    progressChart.update();
-
-    // Task trends: last 6 months completed
-    const byMonth = new Map();
-    const now = new Date();
-    for(let i=5;i>=0;i--){
-        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        byMonth.set(key,0);
-    }
-    tasks.filter(t=>t.status==='done' || t.status==='completed').forEach(t=>{
-        const created = t.created_at ? new Date(t.created_at) : (t.updated_at ? new Date(t.updated_at) : null);
-        if(!created) return;
-        const key = `${created.getFullYear()}-${String(created.getMonth()+1).padStart(2,'0')}`;
-        if(byMonth.has(key)) byMonth.set(key, byMonth.get(key)+1);
-    });
-    const labels = Array.from(byMonth.keys()).map(k=>{
-        const [y,m] = k.split('-');
-        return new Date(Number(y), Number(m)-1, 1).toLocaleString(undefined,{month:'short'});
-    });
-    const values = Array.from(byMonth.values());
-    trendsChart.data.labels = labels;
-    trendsChart.data.datasets[0].data = values;
-    trendsChart.update();
-
-    // Team performance (placeholder derived metrics)
-    performanceChart.data.datasets[0].data = [completionRate, 70, 80, 65, 75];
-    performanceChart.update();
-}
-
-function setAnimatedValue(id, end, isPercent){
-    const el = document.getElementById(id);
-    if(!el) return;
-    const start = 0;
-    const duration = 500;
-    const startTime = performance.now();
-    function step(now){
-        const t = Math.min(1, (now - startTime)/duration);
-        const val = Math.round(start + (end - start) * t);
-        el.textContent = isPercent ? `${val}%` : `${val}`;
-        if(t < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-}
-
-async function loadRecentActivity() {
-    const activityList = document.getElementById('activity-list');
-    if (!activityList) return;
-    
-    try {
-        const response = await window.API.stats.getRecentActivity();
-        const activities = response.results || [];
-        
-        if (activities.length === 0) {
-            activityList.innerHTML = `
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="activity-content">
-                        <p>No recent activity</p>
-                        <span class="activity-time"></span>
-                    </div>
-                </div>
-            `;
-            return;
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics | Smart Task Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        activityList.innerHTML = '';
-        activities.forEach(activity => {
-            const item = document.createElement('div');
-            item.className = 'activity-item';
-            
-            const icon = document.createElement('div');
-            icon.className = 'activity-icon';
-            icon.innerHTML = `<i class="fas fa-${activity.icon}"></i>`;
-            
-            const content = document.createElement('div');
-            content.className = 'activity-content';
-            content.innerHTML = `
-                <p>${activity.description}</p>
-                <span class="activity-time">${activity.time_ago}</span>
-            `;
-            
-            item.appendChild(icon);
-            item.appendChild(content);
-            activityList.appendChild(item);
-        });
-    } catch (error) {
-        console.error('Failed to load recent activity:', error);
-        activityList.innerHTML = `
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas fa-exclamation-circle"></i>
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Orbs Background */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .orb1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #EC4899, #8B5CF6);
+            top: -10%;
+            right: -10%;
+            animation-delay: 0s;
+        }
+
+        .orb2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #8B5CF6, #06B6D4);
+            bottom: -10%;
+            left: -10%;
+            animation-delay: 7s;
+        }
+
+        .orb3 {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, #06B6D4, #EC4899);
+            top: 40%;
+            left: 40%;
+            animation-delay: 14s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(100px, -100px) scale(1.1);
+            }
+            66% {
+                transform: translate(-100px, 100px) scale(0.9);
+            }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #EC4899, #8B5CF6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #EC4899, #8B5CF6);
+            color: white;
+            box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(236, 72, 153, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Stats Grid - 8 Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--card-color-1), var(--card-color-2));
+            opacity: 0.6;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-card.card-1 { --card-color-1: #EC4899; --card-color-2: #8B5CF6; }
+        .stat-card.card-2 { --card-color-1: #8B5CF6; --card-color-2: #06B6D4; }
+        .stat-card.card-3 { --card-color-1: #06B6D4; --card-color-2: #10B981; }
+        .stat-card.card-4 { --card-color-1: #10B981; --card-color-2: #F59E0B; }
+        .stat-card.card-5 { --card-color-1: #F59E0B; --card-color-2: #EF4444; }
+        .stat-card.card-6 { --card-color-1: #EF4444; --card-color-2: #EC4899; }
+        .stat-card.card-7 { --card-color-1: #8B5CF6; --card-color-2: #EC4899; }
+        .stat-card.card-8 { --card-color-1: #06B6D4; --card-color-2: #8B5CF6; }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--card-color-1), var(--card-color-2));
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+        }
+
+        .stat-trend.down {
+            background: rgba(239, 68, 68, 0.15);
+            color: #EF4444;
+        }
+
+        .stat-content h3 {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--card-color-1), var(--card-color-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Progress Ring */
+        .progress-ring {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 6;
+        }
+
+        .progress-ring-progress {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #EC4899, #8B5CF6);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-header h3 {
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.1rem;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        /* Activity List */
+        .activity-section {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2rem;
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .activity-header h3 {
+            font-size: 1.3rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(-4px);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #EC4899, #8B5CF6);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-meta {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .activity-time {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #EC4899;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Orbs -->
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Analytics & Reports</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i class="fas fa-download"></i> Export Report
+                </button>
+                <button class="btn btn-primary" onclick="window.location.reload()">
+                    <i class="fas fa-sync"></i> Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Time Period Filters -->
+        <div class="filters">
+            <button class="filter-btn active" data-period="today">Today</button>
+            <button class="filter-btn" data-period="week">This Week</button>
+            <button class="filter-btn" data-period="month">This Month</button>
+            <button class="filter-btn" data-period="year">This Year</button>
+        </div>
+
+        <!-- Stats Cards - 8 Cards -->
+        <div class="stats-grid">
+            <!-- Card 1: Total Tasks -->
+            <div class="stat-card card-1">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>12%</span>
+                    </div>
                 </div>
-                <div class="activity-content">
-                    <p>Failed to load activity</p>
-                    <span class="activity-time"></span>
+                <div class="stat-content">
+                    <h3>Total Tasks</h3>
+                    <div class="stat-value" id="total-tasks">0</div>
+                    <div class="stat-label">Active Tasks</div>
                 </div>
             </div>
-        `;
-    }
-}
 
-function refreshAnalytics(){ /* handled in loadAnalytics binding */ }
-function exportAnalytics(){ showToast('Export started','success'); }
-function updateChartsForPeriod(period){ /* handled inside loadAnalytics(period) */ }
-function changeChartView(chart, type, e){ showToast(`Changed ${chart} chart to ${type}`,'info'); }
-function changeViewMode(mode, e){ showToast(`Viewing ${mode} mode`,'info'); }
+            <!-- Card 2: Completed Tasks -->
+            <div class="stat-card card-2">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>8%</span>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>Completed Tasks</h3>
+                    <div class="stat-value" id="completed-tasks">0</div>
+                    <div class="stat-label">Finished</div>
+                </div>
+            </div>
 
-// =========================
-// Toast notifications
-// =========================
-function showToast(message,type='info'){
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.style.background = type==='success' ? 'linear-gradient(135deg,#06b6d4,#8b5cf6)' : type==='error' ? '#f87171' : 'rgba(255,255,255,0.15)';
-    toast.innerHTML = message + `<span class="toast-close" onclick="this.parentElement.remove()">×</span>`;
-    document.body.appendChild(toast);
-    setTimeout(()=>{ toast.style.animation='slideOutRight 0.3s ease'; setTimeout(()=>toast.remove(),300); },3000);
-}
-</script>
-{% endblock %}
+            <!-- Card 3: In Progress -->
+            <div class="stat-card card-3">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>5%</span>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>In Progress</h3>
+                    <div class="stat-value" id="in-progress-tasks">0</div>
+                    <div class="stat-label">Active Tasks</div>
+                </div>
+            </div>
+
+            <!-- Card 4: Total Projects -->
+            <div class="stat-card card-4">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-minus"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>Projects</h3>
+                    <div class="stat-value" id="total-projects">0</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+            </div>
+
+            <!-- Card 5: Productivity Rate -->
+            <div class="stat-card card-5">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="progress-ring">
+                        <svg width="60" height="60">
+                            <defs>
+                                <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="progress-ring-circle" cx="30" cy="30" r="26"></circle>
+                            <circle class="progress-ring-progress" cx="30" cy="30" r="26" 
+                                    stroke="url(#gradient1)"
+                                    stroke-dasharray="163.36" 
+                                    stroke-dashoffset="40.84" 
+                                    id="productivity-ring"></circle>
+                        </svg>
+                        <div class="progress-ring-text" id="productivity-text">75%</div>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>Productivity Rate</h3>
+                    <div class="stat-label">5% improvement</div>
+                </div>
+            </div>
+
+            <!-- Card 6: Efficiency -->
+            <div class="stat-card card-6">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-gauge-high"></i>
+                    </div>
+                    <div class="progress-ring">
+                        <svg width="60" height="60">
+                            <defs>
+                                <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#EF4444;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="progress-ring-circle" cx="30" cy="30" r="26"></circle>
+                            <circle class="progress-ring-progress" cx="30" cy="30" r="26" 
+                                    stroke="url(#gradient2)"
+                                    stroke-dasharray="163.36" 
+                                    stroke-dashoffset="32.67" 
+                                    id="efficiency-ring"></circle>
+                        </svg>
+                        <div class="progress-ring-text" id="efficiency-text">80%</div>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>Efficiency</h3>
+                    <div class="stat-label">Excellent performance</div>
+                </div>
+            </div>
+
+            <!-- Card 7: Quality Score -->
+            <div class="stat-card card-7">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="progress-ring">
+                        <svg width="60" height="60">
+                            <defs>
+                                <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="progress-ring-circle" cx="30" cy="30" r="26"></circle>
+                            <circle class="progress-ring-progress" cx="30" cy="30" r="26" 
+                                    stroke="url(#gradient3)"
+                                    stroke-dasharray="163.36" 
+                                    stroke-dashoffset="16.34" 
+                                    id="quality-ring"></circle>
+                        </svg>
+                        <div class="progress-ring-text" id="quality-text">90%</div>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>Quality Score</h3>
+                    <div class="stat-label">High quality</div>
+                </div>
+            </div>
+
+            <!-- Card 8: Team Velocity -->
+            <div class="stat-card card-8">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>15%</span>
+                    </div>
+                </div>
+                <div class="stat-content">
+                    <h3>Team Velocity</h3>
+                    <div class="stat-value" id="team-velocity">24</div>
+                    <div class="stat-label">tasks/week</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <!-- Task Progress Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Task Progress</h3>
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-pie" style="margin-right: 0.5rem;"></i>
+                    Pie Chart - Task Distribution
+                </div>
+            </div>
+
+            <!-- Weekly Activity Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Weekly Activity</h3>
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-bar" style="margin-right: 0.5rem;"></i>
+                    Bar Chart - Daily Activity
+                </div>
+            </div>
+
+            <!-- Team Performance Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Team Performance</h3>
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-line" style="margin-right: 0.5rem;"></i>
+                    Line Chart - Member Performance
+                </div>
+            </div>
+
+            <!-- Productivity Trend Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Productivity Trend</h3>
+                    <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-area" style="margin-right: 0.5rem;"></i>
+                    Area Chart - Monthly Trend
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-section">
+            <div class="activity-header">
+                <h3>Recent Activity</h3>
+                <button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    View All <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
+                </button>
+            </div>
+            <div class="activity-list" id="activity-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading activity...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = '/api';
+        
+        // Get auth token
+        function getAuthToken() {
+            return localStorage.getItem('access_token');
+        }
+
+        // Fetch with auth
+        async function apiFetch(url, options = {}) {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` }),
+                ...options.headers
+            };
+
+            const response = await fetch(url, { ...options, headers });
+            
+            if (response.status === 401) {
+                window.location.href = '/login/';
+                return null;
+            }
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return response.json();
+        }
+
+        // Animate number
+        function animateValue(element, start, end, duration) {
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.round(current);
+            }, 16);
+        }
+
+        // Animate percentage
+        function animatePercentage(element, ringElement, percentage, duration = 1000) {
+            const circumference = 163.36;
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            let current = 100;
+            const decrement = (100 - percentage) / (duration / 16);
+            
+            const timer = setInterval(() => {
+                current -= decrement;
+                if (current <= percentage) {
+                    current = percentage;
+                    clearInterval(timer);
+                }
+                
+                element.textContent = Math.round(current) + '%';
+                const currentOffset = circumference - (current / 100) * circumference;
+                ringElement.style.strokeDashoffset = currentOffset;
+            }, 16);
+        }
+
+        // Load Analytics Data
+        async function loadAnalytics() {
+            try {
+                // Fetch tasks data
+                const tasks = await apiFetch(`${API_BASE_URL}/tasks/`);
+                const projects = await apiFetch(`${API_BASE_URL}/projects/`);
+                
+                if (tasks && projects) {
+                    updateStats(tasks, projects);
+                    displayActivity(tasks);
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Update Stats Cards
+        function updateStats(tasks, projects) {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+            const totalProjects = projects.length;
+
+            // Animate numbers
+            animateValue(document.getElementById('total-tasks'), 0, totalTasks, 1000);
+            animateValue(document.getElementById('completed-tasks'), 0, completedTasks, 1000);
+            animateValue(document.getElementById('in-progress-tasks'), 0, inProgressTasks, 1000);
+            animateValue(document.getElementById('total-projects'), 0, totalProjects, 1000);
+
+            // Calculate and animate percentages
+            const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            const efficiency = totalTasks > 0 ? Math.round(((completedTasks + inProgressTasks) / totalTasks) * 100) : 0;
+            const quality = completedTasks > 0 ? 90 : 0; // Placeholder
+            
+            setTimeout(() => {
+                animatePercentage(
+                    document.getElementById('productivity-text'),
+                    document.getElementById('productivity-ring'),
+                    productivity
+                );
+                animatePercentage(
+                    document.getElementById('efficiency-text'),
+                    document.getElementById('efficiency-ring'),
+                    efficiency
+                );
+                animatePercentage(
+                    document.getElementById('quality-text'),
+                    document.getElementById('quality-ring'),
+                    quality
+                );
+            }, 500);
+        }
+
+        // Display Activity
+        function displayActivity(tasks) {
+            const activityList = document.getElementById('activity-list');
+            const recentTasks = tasks.slice(0, 5);
+
+            if (recentTasks.length === 0) {
+                activityList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: rgba(255, 255, 255, 0.5);">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                        <p>No recent activity</p>
+                    </div>
+                `;
+                return;
+            }
+
+            activityList.innerHTML = recentTasks.map((task, index) => {
+                const icons = ['📌', '✅', '🔄', '⚡', '🎯'];
+                const icon = icons[index % icons.length];
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon">${icon}</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${task.title}</div>
+                            <div class="activity-meta">
+                                ${task.assigned_to ? task.assigned_to.email : 'Unassigned'} • 
+                                ${task.status === 'completed' ? 'Completed' : 
+                                  task.status === 'in_progress' ? 'In Progress' : 'New'}
+                            </div>
+                        </div>
+                        <div class="activity-time">
+                            ${new Date(task.created_at).toLocaleDateString('ar-EG')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filter Buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Here you would filter data based on the selected period
+                const period = this.dataset.period;
+                console.log('Filter by period:', period);
+                loadAnalytics(); // Reload with filter
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAnalytics();
+        });
+    </script>
+</body>
+</html>

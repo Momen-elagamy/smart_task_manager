@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Add New Member - Smart Task Manager{% endblock %}
+{% block extra_css %}
+<style>
+/* Reuse dashboard styles so Add Member matches dashboard exactly */
+.dashboard-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+.orb { position: absolute; border-radius: 50%; filter: blur(80px); animation: orbFloat 20s ease-in-out infinite; }
+.orb-1 { width: 600px; height: 600px; background: linear-gradient(135deg, #8B5CF6, #EC4899); top: -20%; right: -10%; opacity: 0.5; }
+.orb-2 { width: 500px; height: 500px; background: linear-gradient(135deg, #06B6D4, #10B981); bottom: -15%; left: -10%; opacity: 0.4; animation-delay: -7s; }
+.orb-3 { width: 300px; height: 300px; background: linear-gradient(135deg, #F59E0B, #EF4444); top: 50%; left: 30%; opacity: 0.3; animation-delay: -14s; }
+@keyframes orbFloat { 0%,100%{ transform: translate(0, 0) scale(1); } 25%{ transform: translate(40px, -40px) scale(1.1); } 50%{ transform: translate(-20px, 20px) scale(0.95); } 75%{ transform: translate(20px, 40px) scale(1.05); } }
+.grid-pattern { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px); background-size: 60px 60px; z-index: 0; pointer-events: none; }
+
+.page-header { position: relative; z-index: 1; margin-bottom: 2rem; }
+.header-card { display: flex; justify-content: space-between; align-items: center; padding: 24px 32px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.12); border-radius: 28px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+.header-info h1 { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #06B6D4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 6px; }
+.header-info p { color: rgba(255,255,255,0.6); font-size: 14px; margin: 0; }
+.header-actions { display: flex; gap: 12px; }
+
+.btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 16px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: none; font-family: inherit; }
+.btn-primary { background: linear-gradient(135deg, #8B5CF6, #06B6D4); color: #fff; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4); }
+.btn-secondary { background: rgba(255,255,255,0.06); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); color: #fff; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 2rem; position: relative; z-index: 1; }
+.stat-card { position: relative; padding: 28px; background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.stat-header { display:flex; justify-content:space-between; align-items:flex-start; }
+.stat-label { font-size: 14px; color: rgba(255,255,255,0.6); font-weight: 500; margin-bottom: 10px; }
+.stat-value { font-size: 48px; font-weight: 800; color: #fff; line-height: 1; text-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.stat-icon { width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8B5CF6, rgba(255,255,255,0.1)); color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 24px; }
+
+.glass-card { position: relative; z-index: 1; background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); border-radius: 28px; padding: 32px; margin-bottom: 24px; }
+.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+.card-title { font-size:22px; font-weight:700; color:#fff; display:flex; align-items:center; gap:12px; }
+
+.form-group{margin-bottom:14px}
+.form-label{display:block;margin-bottom:8px;color:rgba(255,255,255,0.7);font-size:14px}
+.form-input, .form-select{width:100%;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:inherit;font-size:15px}
+
+.invite-alert{display:none;margin-bottom:18px;padding:14px 18px;border-radius:14px;font-weight:600;letter-spacing:0.3px}
+.invite-alert.success{background:linear-gradient(135deg,#10B981,#06B6D4);color:#fff;box-shadow:0 10px 30px rgba(16,185,129,0.35)}
+.invite-alert.error{background:linear-gradient(135deg,#EF4444,#DC2626);color:#fff;box-shadow:0 10px 30px rgba(239,68,68,0.35)}
+
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .header-card { flex-direction: column; gap: 20px; padding: 20px; text-align: center; } .header-actions { width: 100%; justify-content: center; } .stats-grid { grid-template-columns: 1fr; } }
+
+</style>
+{% endblock %}
+{% block content %}
+<!-- Animated Background -->
+<div class="dashboard-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+<div class="grid-pattern"></div>
+
+<!-- Page Header -->
+<header class="page-header slide-up" style="margin-top:0 !important;padding-top:0 !important;">
+    <div class="header-card" style="margin-top:0 !important;padding-top:0 !important;">
+        <div class="header-info">
+            <h1>Add New Member</h1>
+            <p>Invite a new team member to your workspace</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'team' %}" class="btn btn-secondary"><i class="fas fa-users"></i> View Team</a>
+            <button class="btn btn-primary" id="invite-btn"><i class="fas fa-paper-plane"></i> Invite</button>
+        </div>
+    </div>
+</header>
+
+<!-- Stats Cards (mirror dashboard) -->
+<div class="stats-grid fade-in">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Active Members</div>
+                <div class="stat-value">{{ team_count|default:0 }}</div>
+            </div>
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Invites Sent</div>
+                <div class="stat-value">0</div>
+            </div>
+            <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Pending</div>
+                <div class="stat-value">0</div>
+            </div>
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-header">
+            <div>
+                <div class="stat-label">Admins</div>
+                <div class="stat-value">0</div>
+            </div>
+            <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Form (glass-card like dashboard tasks section) -->
+<div class="glass-card slide-up">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-user-plus"></i> Invite Member</h2>
+    </div>
+    <div id="invite-result" class="invite-alert" role="alert"></div>
+    <form id="add-member-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label" for="add-email">Email Address *</label>
+            <input type="email" id="add-email" name="email" class="form-input" placeholder="member@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="add-full-name">Full Name</label>
+            <input type="text" id="add-full-name" name="full_name" class="form-input" placeholder="Enter full name" autocomplete="name">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="add-role">Role</label>
+            <select id="add-role" name="role" class="form-select">
+                <option value="developer">Developer</option>
+                <option value="designer">Designer</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+                <option value="client">Client</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="add-phone">Phone Number</label>
+            <input type="tel" id="add-phone" name="phone" class="form-input" placeholder="+20 xxx xxx xxxx" autocomplete="tel">
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px;">
+            <a href="{% url 'team' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Send Invite</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const formEl = document.getElementById('add-member-form');
+    if (!formEl) return;
+    const inviteEndpoint = "{% url 'api-user-invite' %}";
+    const resultEl = document.getElementById('invite-result');
+    formEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    try {
+        const response = await fetch(inviteEndpoint, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            },
+            body: JSON.stringify({
+                email: formData.get('email'),
+                full_name: formData.get('full_name'),
+                role: formData.get('role'),
+                phone: formData.get('phone')
+            })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+            const password = data.temporary_password || 'Generated password ready to share';
+            resultEl.textContent = `Invitation sent successfully. Temporary password: ${password}`;
+            resultEl.classList.remove('error');
+            resultEl.classList.add('success');
+            resultEl.style.display = 'block';
+            formEl.reset();
+        } else {
+            const errorMessage = data.error || 'Failed to add member.';
+            resultEl.textContent = errorMessage;
+            resultEl.classList.remove('success');
+            resultEl.classList.add('error');
+            resultEl.style.display = 'block';
+        }
+    } catch (error) {
+        resultEl.textContent = 'Failed to add member. Please try again.';
+        resultEl.classList.remove('success');
+        resultEl.classList.add('error');
+        resultEl.style.display = 'block';
+    }
+    });
+});
+</script>
+{% endblock %}

@@ -1,7 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from django.http import JsonResponse
 import json
+from django.contrib.auth.decorators import login_required
 
 def register_view(request):
     """Render registration page"""
@@ -18,6 +20,20 @@ def dashboard_view(request):
 def chat_view(request):
     """Render AI chat page"""
     return render(request, 'chat.html')
+
+@login_required
+def team_view(request):
+    """Render team page (list of users)"""
+    return render(request, 'users/team_list.html')
+
+@login_required
+def settings_view(request):
+    """Render settings page"""
+    return render(request, 'settings.html')
+
+def api_explorer_view(request):
+    """Simple page to interact with all API endpoints"""
+    return render(request, 'frontend/api_explorer.html')
 
 def welcome_view(request):
     """Render welcome page"""
@@ -40,6 +56,13 @@ def stats_api(request):
         }
         return JsonResponse(stats)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+def logout_view(request):
+    """Log out the user and redirect to welcome page"""
+    logout(request)
+    return redirect('welcome')
 
 
 

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Notifications | Smart Task Manager{% endblock %}
+{% block main_content %}
+<h1 style="margin-top:0">Notifications</h1>
+<p style="color:#666">هذه الصفحة تعرض الإشعارات وتسمح بتمييزها كمقروءة.</p>
+<div class="notif-actions" style="margin:1rem 0">
+  <button id="refresh-notifs" class="btn btn-sm">Refresh</button>
+  <button id="mark-all-read" class="btn btn-sm">Mark All Read</button>
+</div>
+<table class="data-table" style="width:100%" id="notif-table">
+  <thead>
+    <tr>
+      <th style="text-align:left;padding:6px">Message</th>
+      <th style="text-align:left;padding:6px">Created</th>
+      <th style="text-align:left;padding:6px">Status</th>
+      <th style="text-align:left;padding:6px">Actions</th>
+    </tr>
+  </thead>
+  <tbody id="notif-body">
+    <tr><td colspan="4" style="padding:8px">Loading...</td></tr>
+  </tbody>
+</table>
+{% endblock %}
+{% block page_scripts %}
+<script>
+async function loadNotifs(){
+  const bodyEl = document.getElementById('notif-body');
+  bodyEl.innerHTML = '<tr><td colspan="4" style="padding:8px">Loading...</td></tr>';
+  try {
+    const data = await apiFetch('/notifications/');
+    const results = data && data.results ? data.results : data; // DRF pagination safety
+    if(!Array.isArray(results) || results.length === 0){
+      bodyEl.innerHTML = '<tr><td colspan="4" style="padding:8px">No notifications.</td></tr>';
+      return;
+    }
+    bodyEl.innerHTML='';
+    results.forEach(n => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding:6px">${n.message || n.title || '(no message)'}</td>
+        <td style="padding:6px">${n.created_at || ''}</td>
+        <td style="padding:6px">${n.is_read ? '<span style="color:#4caf50">Read</span>' : '<span style="color:#f44336">Unread</span>'}</td>
+        <td style="padding:6px">
+          <button class="btn-sm mark-read-btn" data-id="${n.id}" ${n.is_read ? 'disabled' : ''}>Mark Read</button>
+        </td>`;
+      bodyEl.appendChild(tr);
+    });
+    document.querySelectorAll('.mark-read-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const id = btn.getAttribute('data-id');
+        if(!id) return;
+        btn.disabled = true;
+        btn.textContent = '...';
+        try {
+          await apiFetch(`/notifications/${id}/`, { method:'POST' });
+          await loadNotifs();
+        } catch(err){
+          console.error(err); btn.disabled=false; btn.textContent='Mark Read';
+        }
+      });
+    });
+  } catch(err){
+    bodyEl.innerHTML = '<tr><td colspan="4" style="padding:8px;color:#c33">Failed to load.</td></tr>';
+  }
+}
+
+async function markAll(){
+  const btn = document.getElementById('mark-all-read');
+  btn.disabled = true; btn.textContent='Working...';
+  try { await apiFetch('/notifications/mark-all-read/', { method:'POST' }); }
+  catch(e){ console.error(e); }
+  btn.disabled=false; btn.textContent='Mark All Read';
+  loadNotifs();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('refresh-notifs').addEventListener('click', loadNotifs);
+  document.getElementById('mark-all-read').addEventListener('click', markAll);
+  loadNotifs();
+});
+</script>
+{% endblock %}

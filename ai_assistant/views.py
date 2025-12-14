@@ -1,10 +1,18 @@
 from django.shortcuts import render
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .utils import analyze_productivity, suggest_tasks
 from .ai_engine import get_ai_response, summarize_project, generate_task_from_prompt
 from projects.models import Project
+
+
+class AIChatbotPageView(LoginRequiredMixin, TemplateView):
+    """HTML page for AI Chatbot"""
+    template_name = 'ai_assistant/chatbot.html'
+
 
 class ProductivityReportView(APIView):
     permission_classes = [IsAuthenticated]
@@ -21,20 +29,26 @@ class TaskSuggestionView(APIView):
 class AIChatView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        prompt = request.data.get("prompt")
+        prompt = (request.data.get("prompt") or "").strip()
+        if not prompt:
+            return Response({"detail": "Prompt is required."}, status=400)
         reply = get_ai_response(prompt, user=request.user)
         return Response({"response": reply})
 
 class ProjectSummaryView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, project_id):
-        project = Project.objects.get(id=project_id)
+        project = Project.objects.filter(id=project_id, owner=request.user).first()
+        if not project:
+            return Response({"detail": "Project not found."}, status=404)
         summary = summarize_project(project)
         return Response({"project": project.name, "summary": summary})
 
 class TaskGeneratorView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        prompt = request.data.get("prompt")
+        prompt = (request.data.get("prompt") or "").strip()
+        if not prompt:
+            return Response({"detail": "Prompt is required."}, status=400)
         result = generate_task_from_prompt(request.user, prompt)
         return Response(result)

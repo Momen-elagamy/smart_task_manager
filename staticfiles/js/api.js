@@ -17,293 +17,463 @@ function getCookie(name) {
 const csrftoken = getCookie('csrftoken');
 
 async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return null;
     try {
-        // Check if refresh token exists in localStorage or cookies
-        let refreshToken = localStorage.getItem('refreshToken');
-        
-        // If not in localStorage, check cookies (remember me feature)
-        if (!refreshToken) {
-            refreshToken = getCookie('refresh_token');
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
-        
-        if (!refreshToken) return null;
-        
-        const resp = await fetch('/api/users/token/refresh/', {
-            method: 'POST',
-            headers: {
+
+        const csrftoken = getCookie('csrftoken');
+
+        async function refreshAccessToken() {
+            const refreshToken = localStorage.getItem('refreshToken');
+            if (!refreshToken) return null;
+            try {
+                const resp = await fetch('/api/users/token/refresh/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: refreshToken })
+                });
+                if (!resp.ok) return null;
+                const data = await resp.json();
+                if (data.access) {
+                    localStorage.setItem('accessToken', data.access);
+                    return data.access;
+                }
+            } catch (_) {}
+            return null;
+        }
+
+        async function apiFetch(url, options = {}) {
+            // Normalize URL: if caller passed a relative path like 'rooms/'
+            // convert it to an absolute path so fetch does not resolve it
+            // relative to the current HTML path (which caused 404s returning HTML).
+            function resolveApiUrl(u){
+                if (!u) return u;
+                // Already absolute
+                if (/^https?:\/\//i.test(u)) return u;
+                // Leading slash -> absolute to origin
+                if (u.startsWith('/')) return u;
+                // Otherwise treat as root-relative
+                try{
+                    return new URL('/' + u.replace(/^\/+/, ''), window.location.origin).toString();
+                }catch(e){
+                    return '/' + u.replace(/^\/+/, '');
+                }
+            }
+            const originalUrl = url;
+            url = resolveApiUrl(url);
+            if (originalUrl && !originalUrl.startsWith('/') && !/^https?:\/\//i.test(originalUrl)) {
+                console.warn('apiFetch: converted relative URL to absolute:', originalUrl, '->', url);
+            }
+            const defaultHeaders = {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrftoken,
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({ refresh: refreshToken }),
-        });
-        if (!resp.ok) return null;
-        const data = await resp.json();
-        if (data && data.access) {
-            localStorage.setItem('accessToken', data.access);
-            return data.access;
-        }
-        return null;
-    } catch (e) {
-        return null;
-    }
-}
+            };
 
-async function apiFetch(url, options = {}) {
-    const defaultHeaders = {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrftoken,
-    };
+            const mergedOptions = {
+                ...options,
+                headers: {
+                    ...defaultHeaders,
+                    ...options.headers,
+                },
+                credentials: 'same-origin',
+            };
 
-    const mergedOptions = {
-        ...options,
-        headers: {
-            ...defaultHeaders,
-            ...options.headers,
-        },
-        credentials: 'same-origin',
-    };
-
-    // Attach JWT if available
-    try {
-        let accessToken = localStorage.getItem('accessToken');
-        
-        // If not in localStorage, check cookies (remember me feature)
-        if (!accessToken) {
-            accessToken = getCookie('access_token');
+            // Attach JWT if available
+            const accessToken = localStorage.getItem('accessToken');
             if (accessToken) {
-                // Store in localStorage for future requests
-                localStorage.setItem('accessToken', accessToken);
+                mergedOptions.headers['Authorization'] = `Bearer ${accessToken}`;
             }
-        }
-        
-        if (accessToken) {
-            mergedOptions.headers['Authorization'] = `Bearer ${accessToken}`;
-        }
-    } catch (e) {
-        // localStorage may be unavailable in some contexts; ignore
-    }
 
-    try {
-        const response = await fetch(url, mergedOptions);
-        if (!response.ok) {
-            // Attempt silent refresh on 401 once
-            if (response.status === 401 && !options._retried) {
-                const newToken = await refreshAccessToken();
-                if (newToken) {
-                    const retryOptions = {
-                        ...mergedOptions,
-                        headers: {
-                            ...mergedOptions.headers,
-                            'Authorization': `Bearer ${newToken}`,
-                        },
-                    };
-                    return await apiFetch(url, { ...retryOptions, _retried: true });
+            try {
+                const response = await fetch(url, mergedOptions);
+                if (!response.ok) {
+                    // Attempt silent refresh on 401 once
+                    if (response.status === 401 && !options._retried) {
+                        const newToken = await refreshAccessToken();
+                        if (newToken) {
+                            const retryOptions = {
+                                ...mergedOptions,
+                                headers: {
+                                    ...mergedOptions.headers,
+                                    'Authorization': `Bearer ${newToken}`,
+                                },
+                            };
+                            return await apiFetch(url, { ...retryOptions, _retried: true });
+                        } else {
+                            // Clear tokens and bubble up a friendly message
+                            try {
+                                localStorage.removeItem('accessToken');
+                                localStorage.removeItem('refreshToken');
+                            } catch (e) {}
+                            const err = new Error('Token expired. Please log in again.');
+                            err.status = 401;
+                            throw err;
+                        }
+                    }
+            
+                    // Handle 403 Forbidden
+                    if (response.status === 403) {
+                        const err = new Error('Access denied. Please log in again.');
+                        err.status = 403;
+                        throw err;
+                    }
+            
+                    if (response.status === 302 || response.redirected) {
+                        throw new Error('Authentication session may have expired.');
+                    }
+            
+                    // Check if response is JSON before trying to parse
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        try {
+                            const errorData = await response.json();
+                            const err = new Error(errorData.detail || errorData.message || `HTTP error! Status: ${response.status}`);
+                            err.status = response.status;
+                            err.data = errorData;
+                            throw err;
+                        } catch (jsonError) {
+                            const err = new Error(`HTTP error! Status: ${response.status}`);
+                            err.status = response.status;
+                            throw err;
+                        }
+                    } else {
+                        // Response is not JSON (might be HTML error page)
+                            const text = await response.text();
+                            if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                                // If this was a short/relative URL (e.g. 'rooms/') try a safe retry
+                                // by prefixing the chat API base. This covers cached scripts or
+                                // service-workers calling relative endpoints.
+                                if (!url.includes('/chat/api/') && originalUrl) {
+                                    try{
+                                        const alt = originalUrl.startsWith('/') ? '/chat/api' + originalUrl : '/chat/api/' + originalUrl.replace(/^\/+/, '');
+                                        console.warn('apiFetch: detected HTML error on', url, 'attempting fallback to', alt);
+                                        const retryResp = await fetch(alt, mergedOptions);
+                                        if (retryResp.ok) {
+                                            const ct = retryResp.headers.get('content-type') || '';
+                                            if (ct.includes('application/json')) return await retryResp.json();
+                                            const t2 = await retryResp.text();
+                                            return { message: t2 };
+                                        }
+                                    }catch(retryErr){
+                                        console.warn('apiFetch fallback failed', retryErr);
+                                    }
+                                }
+                                const err = new Error(`Server returned HTML instead of JSON. Status: ${response.status}. You may need to log in.`);
+                                err.status = response.status;
+                                throw err;
+                            }
+                        const err = new Error(`HTTP error! Status: ${response.status}`);
+                        err.status = response.status;
+                        throw err;
+                    }
+                }
+        
+                if (response.status === 204) {
+                    return null;
+                }
+        
+                // Check if response is JSON before parsing
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return await response.json();
                 } else {
-                    // Clear tokens and bubble up a friendly message
+                    // If not JSON, return text or null
+                    const text = await response.text();
+                    if (text) {
+                        console.warn('Response is not JSON:', text);
+                        return { message: text };
+                    }
+                    return null;
+                }
+            } catch (error) {
+                console.error('Fetch API call failed:', error);
+        
+                // If it's a 401 or explicit token expiry, redirect to login
+                if (error.status === 401 || (error.message && (error.message.includes('Token expired') || error.message.includes('Invalid token')))) {
+                    // Clear all auth data
                     try {
                         localStorage.removeItem('accessToken');
                         localStorage.removeItem('refreshToken');
+                        sessionStorage.clear();
                     } catch (e) {}
-                    const err = new Error('Session expired. Please log in again.');
-                    err.status = 401;
-                    throw err;
+            
+                    // Redirect to login
+                    window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname + window.location.search);
                 }
-            }
-            
-            // Handle 403 Forbidden
-            if (response.status === 403) {
-                const err = new Error('Access denied. Please log in again.');
-                err.status = 403;
-                throw err;
-            }
-            
-            if (response.status === 302 || response.redirected) {
-                throw new Error('Authentication session may have expired.');
-            }
-            
-            // Check if response is JSON before trying to parse
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                try {
-                    const errorData = await response.json();
-                    const err = new Error(errorData.detail || errorData.message || `HTTP error! Status: ${response.status}`);
-                    err.status = response.status;
-                    err.data = errorData;
-                    throw err;
-                } catch (jsonError) {
-                    const err = new Error(`HTTP error! Status: ${response.status}`);
-                    err.status = response.status;
-                    throw err;
-                }
-            } else {
-                // Response is not JSON (might be HTML error page)
-                const text = await response.text();
-                if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-                    const err = new Error(`Server returned HTML instead of JSON. Status: ${response.status}. You may need to log in.`);
-                    err.status = response.status;
-                    throw err;
-                }
-                const err = new Error(`HTTP error! Status: ${response.status}`);
-                err.status = response.status;
-                throw err;
+        
+                throw error;
             }
         }
-        
-        if (response.status === 204) {
-            return null;
+
+        // --- API Functions ---
+
+        // Profile
+        async function getProfile() {
+            return await apiFetch('/api/users/profile/');
         }
-        
-        // Check if response is JSON before parsing
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return await response.json();
-        } else {
-            // If not JSON, return text or null
-            const text = await response.text();
-            if (text) {
-                console.warn('Response is not JSON:', text);
-                return { message: text };
-            }
-            return null;
+
+        async function updateProfile(data) {
+            // Allow partial updates via PATCH
+            return await apiFetch('/api/users/profile/', {
+                method: 'PATCH',
+                body: JSON.stringify(data),
+            });
         }
-    } catch (error) {
-        console.error('Fetch API call failed:', error);
-        
-        // If it's a 401 or session expired error, redirect to login
-        if (error.status === 401 || (error.message && error.message.includes('Session expired'))) {
-            // Clear all auth data
-            try {
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                sessionStorage.clear();
-            } catch (e) {}
-            
-            // Redirect to login
-            window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname + window.location.search);
+
+        // Users - lightweight team endpoints
+        async function getUsersAll(params = {}) {
+            const query = new URLSearchParams(params).toString();
+            const url = '/api/team/members/' + (query ? `?${query}` : '');
+            return await apiFetch(url);
         }
-        
-        throw error;
-    }
-}
 
-// --- API Functions ---
+        async function createUser(user) {
+            const payload = {
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                password: user.password
+            };
+            return await apiFetch('/api/users/register/', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+        }
 
-// Profile
-async function getProfile() {
-    return await apiFetch('/api/users/profile/');
-}
+        // Auth (JWT based)
+        async function login(email, password) {
+            const resp = await apiFetch('/api/users/login/', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+            return resp;
+        }
 
-async function updateProfile(data) {
-    // Allow partial updates via PATCH
-    return await apiFetch('/api/users/profile/', {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-    });
-}
+        // Users (admin)
+        async function createUserWithRole(user) {
+            return await apiFetch('/api/users/create/', {
+                method: 'POST',
+                body: JSON.stringify(user),
+            });
+        }
 
-// Users - lightweight team endpoints
-async function getUsersAll(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    const url = '/api/team/members/' + (query ? `?${query}` : '');
-    return await apiFetch(url);
-}
+        // Tasks
+        async function getTasks(params = {}) {
+            const query = new URLSearchParams(params).toString();
+            const url = '/tasks/api/tasks/' + (query ? `?${query}` : '');
+            return await apiFetch(url);
+        }
 
-async function createUser(user) {
-    const payload = {
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        password: user.password,
-        password2: user.confirm_password || user.password2 || user.password,
-        role: user.role || 'client',
-        department: user.department || null,
-        // username is collected by the form but not used by backend auth model;
-        // send for completeness but serializer will ignore it safely.
-        username: user.username || '',
-    };
-    return await apiFetch('/api/users/register/', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-    });
-}
+        async function getTaskById(taskId) {
+            return await apiFetch(`/tasks/api/tasks/${taskId}/`);
+        }
 
-// Tasks (DRF router exposes under /api/tasks/tasks/)
-async function getTasks() {
-    return await apiFetch('/api/tasks/tasks/');
-}
+        async function createTask(task) {
+            return await apiFetch('/tasks/api/tasks/', {
+                method: 'POST',
+                body: JSON.stringify(task),
+            });
+        }
 
-async function getTaskById(taskId) {
-    return await apiFetch(`/api/tasks/tasks/${taskId}/`);
-}
+        async function updateTask(taskId, task) {
+            return await apiFetch(`/tasks/api/tasks/${taskId}/`, {
+                method: 'PUT',
+                body: JSON.stringify(task),
+            });
+        }
 
+        async function patchTask(taskId, task) {
+            return await apiFetch(`/tasks/api/tasks/${taskId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify(task),
+            });
+        }
+
+        async function deleteTask(taskId) {
+            return await apiFetch(`/tasks/api/tasks/${taskId}/`, {
+                method: 'DELETE',
+            });
+        }
+
+        // Projects
+        async function getProjects(params = {}) {
+            const query = new URLSearchParams(params).toString();
+            const url = '/projects/api/projects/' + (query ? `?${query}` : '');
+            return await apiFetch(url);
+        }
+
+        async function getProjectById(projectId) {
+            return await apiFetch(`/projects/api/projects/${projectId}/`);
+        }
+
+        async function createProject(project) {
+            return await apiFetch('/projects/api/projects/', {
+                method: 'POST',
+                body: JSON.stringify(project),
+            });
+        }
+
+        async function updateProject(projectId, project) {
+            return await apiFetch(`/projects/api/projects/${projectId}/`, {
+                method: 'PUT',
+                body: JSON.stringify(project),
+            });
+        }
+
+        async function patchProject(projectId, project) {
+            return await apiFetch(`/projects/api/projects/${projectId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify(project),
+            });
+        }
+
+        async function deleteProject(projectId) {
+            return await apiFetch(`/projects/api/projects/${projectId}/`, {
+                method: 'DELETE',
+            });
+        }
+
+        // Notifications
+        async function getNotifications(params = {}) {
+            const query = new URLSearchParams(params).toString();
+            const url = '/notifications/api/notifications/' + (query ? `?${query}` : '');
+            return await apiFetch(url);
+        }
+
+        async function getNotificationCount() {
+            return await apiFetch('/notifications/api/notifications/count/');
+        }
+
+        async function markNotificationRead(notificationId) {
+            return await apiFetch(`/notifications/api/notifications/${notificationId}/mark_read/`, {
+                method: 'POST',
+            });
+        }
+
+        async function markAllNotificationsRead() {
+            return await apiFetch('/notifications/api/notifications/mark_all_read/', {
+                method: 'POST',
+            });
+        }
+
+        // Dashboard stats
+        async function getStats() {
+            return await apiFetch('/api/dashboard/stats/');
+        }
+
+        async function getRecentActivity() {
+            return await apiFetch('/api/dashboard/activity/recent/');
+        }
+
+        // Tasks (legacy naming)
+        async function createTaskLegacy(task) {
+            return await apiFetch('/api/tasks/', {
+                method: 'POST',
+                body: JSON.stringify(task),
+            });
+        }
+
+        async function updateTaskLegacy(taskId, task) {
+            return await apiFetch(`/api/tasks/${taskId}/`, {
+                method: 'PUT',
+                body: JSON.stringify(task),
+            });
+        }
+
+        async function patchTaskLegacy(taskId, task) {
+            return await apiFetch(`/api/tasks/${taskId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify(task),
+            });
+        }
+
+        async function deleteTaskLegacy(taskId) {
+            return await apiFetch(`/api/tasks/${taskId}/`, {
+                method: 'DELETE',
+            });
+        }
 async function createTask(taskData) {
-    return await apiFetch('/api/tasks/tasks/', {
+    return await apiFetch('/tasks/api/tasks/', {
         method: 'POST',
         body: JSON.stringify(taskData),
     });
 }
 
 async function updateTask(taskId, taskData) {
-    return await apiFetch(`/api/tasks/tasks/${taskId}/`, {
+    return await apiFetch(`/tasks/api/tasks/${taskId}/`, {
         method: 'PUT',
         body: JSON.stringify(taskData),
     });
 }
 
 async function patchTask(taskId, taskData) {
-    return await apiFetch(`/api/tasks/tasks/${taskId}/`, {
+    return await apiFetch(`/tasks/api/tasks/${taskId}/`, {
         method: 'PATCH',
         body: JSON.stringify(taskData),
     });
 }
 
 async function deleteTask(taskId) {
-    return await apiFetch(`/api/tasks/tasks/${taskId}/`, {
+    return await apiFetch(`/tasks/api/tasks/${taskId}/`, {
         method: 'DELETE',
     });
 }
 
 // Projects (DRF router exposes under /api/projects/projects/)
 async function getProjects() {
-    const response = await apiFetch('/api/projects/projects/');
+    const response = await apiFetch('/projects/api/projects/');
     return response.results || response;
 }
 
 async function getProjectById(projectId) {
-    return await apiFetch(`/api/projects/projects/${projectId}/`);
+    return await apiFetch(`/projects/api/projects/${projectId}/`);
 }
 
 async function createProject(projectData) {
-    return await apiFetch('/api/projects/projects/', {
+    return await apiFetch('/projects/api/projects/', {
         method: 'POST',
         body: JSON.stringify(projectData),
     });
 }
 
 async function updateProject(projectId, projectData) {
-    return await apiFetch(`/api/projects/projects/${projectId}/`, {
+    return await apiFetch(`/projects/api/projects/${projectId}/`, {
         method: 'PUT',
         body: JSON.stringify(projectData),
     });
 }
 
 async function patchProject(projectId, projectData) {
-    return await apiFetch(`/api/projects/projects/${projectId}/`, {
+    return await apiFetch(`/projects/api/projects/${projectId}/`, {
         method: 'PATCH',
         body: JSON.stringify(projectData),
     });
 }
 
 async function deleteProject(projectId) {
-    return await apiFetch(`/api/projects/projects/${projectId}/`, {
+    return await apiFetch(`/projects/api/projects/${projectId}/`, {
         method: 'DELETE',
     });
 }
 
 // Dashboard stats
 async function getStats() {
-    return await apiFetch('/api/dashboard/stats/');
+    return await apiFetch('/dashboard/stats/');
 }
 
 // Recent activity
@@ -314,21 +484,21 @@ async function getRecentActivity() {
 // Notifications
 async function getNotifications(unreadOnly = false) {
     const params = unreadOnly ? '?unread=true' : '';
-    return await apiFetch(`/api/notifications/${params}`);
+    return await apiFetch(`/notifications/${params}`);
 }
 
 async function getNotificationCount() {
-    return await apiFetch('/api/notifications/count/');
+    return await apiFetch('/notifications/count/');
 }
 
 async function markNotificationRead(notificationId) {
-    return await apiFetch(`/api/notifications/${notificationId}/`, {
+    return await apiFetch(`/notifications/${notificationId}/`, {
         method: 'PATCH',
     });
 }
 
 async function markAllNotificationsRead() {
-    return await apiFetch('/api/notifications/mark-all-read/', {
+    return await apiFetch('/notifications/mark-all-read/', {
         method: 'POST',
     });
 }
@@ -368,7 +538,7 @@ window.API = {
     },
     chat: {
         ensureDM: async (userId) => {
-            const resp = await apiFetch('/api/chat/rooms/ensure_dm/', {
+            const resp = await apiFetch('/chat/api/rooms/ensure_dm/', {
                 method: 'POST',
                 body: JSON.stringify({ user_id: userId }),
             });
@@ -376,15 +546,20 @@ window.API = {
         },
         getMessages: async (roomId) => {
             const qs = new URLSearchParams({ room: roomId }).toString();
-            return await apiFetch(`/api/chat/messages/?${qs}`);
+            return await apiFetch(`/chat/api/messages/?${qs}`);
         },
         sendMessage: async (roomId, content) => {
-            return await apiFetch('/api/chat/messages/', {
+            return await apiFetch('/chat/api/messages/', {
                 method: 'POST',
                 body: JSON.stringify({ room: roomId, content }),
             });
         },
-        getRooms: async () => apiFetch('/api/chat/rooms/'),
+        getRooms: async () => apiFetch('/chat/api/rooms/'),
+        createRoom: async (payload) => apiFetch('/chat/api/rooms/', { method: 'POST', body: JSON.stringify(payload) }),
+        addMembers: async (roomId, members) => apiFetch(`/chat/api/rooms/${roomId}/add_members/`, {
+            method: 'POST',
+            body: JSON.stringify({ members }),
+        }),
     },
     tasks: {
         getAll: getTasks,

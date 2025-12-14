@@ -1,4 +1,4 @@
-from django.urls import include
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
@@ -10,4 +10,7 @@ router.register(r'attachments', views.AttachmentViewSet, basename='api-attachmen
 router.register(r'tags', views.TagViewSet, basename='api-tags')
 
 # Important: Do NOT include frontend views here to avoid mixing HTML under /api/
-urlpatterns = router.urls
+urlpatterns = [
+    path('', views.TasksPageView.as_view(), name='tasks'),  # HTML page
+    path('api/', include(router.urls)),  # REST API
+]

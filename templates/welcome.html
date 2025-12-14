@@ -1,617 +1,197 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S T manger - Welcome</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0e27;
-            --bg-secondary: #151933;
-            --text-primary: #ffffff;
-            --text-secondary: #a0aec0;
-            --text-muted: #718096;
-            --border: #2d3548;
-            --accent-cyan: #06b6d4;
-            --accent-pink: #ec4899;
-            --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0a0e27, #1a1f3a, #0f1429, #2c1a3a);
-            background-size: 400% 400%;
-            background-attachment: fixed;
-            animation: gradientBG 15s ease infinite;
-            min-height: 100vh;
-            display: flex;
-            overflow: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(6, 182, 212, 0.15) 0%, transparent 40%),
-                        radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 50%);
-            animation: float 30s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.8; }
-            25% { transform: translate(40px, -60px) rotate(45deg); opacity: 1; }
-            50% { transform: translate(-30px, 30px) rotate(90deg); opacity: 0.7; }
-            75% { transform: translate(60px, 40px) rotate(135deg); opacity: 1; }
-        }
-
-        /* Left Section */
-        .left-section {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            padding: 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .left-section::before {
-            content: '';
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
-            top: -100px;
-            left: -100px;
-            border-radius: 50%;
-            filter: blur(60px);
-        }
-
-        .brand {
-            margin-bottom: 60px;
-            animation: fadeInLeft 0.8s ease-out;
-            position: relative;
-            z-index: 1;
-        }
-
-        .logo-text {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .logo-icon {
-            width: 55px;
-            height: 55px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: white;
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .brand h1 {
-            color: var(--text-primary);
-            font-size: 2em;
-            font-weight: 700;
-        }
-
-        .brand-tagline {
-            color: var(--text-muted);
-            font-size: 1em;
-            margin-left: 70px;
-        }
-
-        .welcome-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .welcome-content h2 {
-            color: var(--text-primary);
-            font-size: 3.2em;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 24px;
-            animation: fadeInLeft 0.8s ease-out 0.2s both;
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .welcome-content p {
-            color: var(--text-secondary);
-            font-size: 1.15em;
-            line-height: 1.8;
-            margin-bottom: 40px;
-            max-width: 500px;
-            animation: fadeInLeft 0.8s ease-out 0.4s both;
-        }
-
-        .stats {
-            display: flex;
-            gap: 40px;
-            margin-top: 50px;
-            animation: fadeInLeft 0.8s ease-out 0.6s both;
-        }
-
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-number {
-            color: var(--accent-cyan);
-            font-size: 2.5em;
-            font-weight: 700;
-            margin-bottom: 5px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 0.9em;
-        }
-
-        /* Right Section */
-        .right-section {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            padding: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .floating-shapes {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .shape {
-            position: absolute;
-            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(236, 72, 153, 0.1));
-            border-radius: 50%;
-            filter: blur(60px);
-            animation: floatShape 20s infinite ease-in-out;
-        }
-
-        .shape:nth-child(1) {
-            width: 300px;
-            height: 300px;
-            top: 10%;
-            left: 5%;
-            animation-delay: 0s;
-        }
-
-        .shape:nth-child(2) {
-            width: 250px;
-            height: 250px;
-            bottom: 15%;
-            right: 10%;
-            animation-delay: 10s;
-        }
-
-        @keyframes floatShape {
-            0%, 100% {
-                transform: translate(0, 0) scale(1);
-            }
-            50% {
-                transform: translate(-30px, -30px) scale(1.1);
-            }
-        }
-
-        .welcome-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 32px;
-            padding: 50px;
-            width: 100%;
-            max-width: 500px;
-            animation: fadeInRight 0.8s ease-out;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2),
-                        inset 0 2px 10px rgba(255, 255, 255, 0.2);
-            position: relative;
-            z-index: 1;
-        }
-
-        .card-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .card-header h3 {
-            color: var(--text-primary);
-            font-size: 2em;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .card-header p {
-            color: var(--text-secondary);
-            font-size: 1em;
-        }
-
-        .features-list {
-            margin-bottom: 40px;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .feature-item:hover {
-            background: rgba(6, 182, 212, 0.1);
-            border-color: rgba(6, 182, 212, 0.3);
-            transform: translateX(8px);
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2);
-        }
-
-        .feature-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
-        }
-
-        .feature-info h4 {
-            color: var(--text-primary);
-            font-size: 1em;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .feature-info p {
-            color: var(--text-muted);
-            font-size: 0.85em;
-        }
-
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .btn {
-            padding: 16px 32px;
-            border-radius: 12px;
-            border: none;
-            font-size: 1.05em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
-            color: white;
-            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 32px rgba(6, 182, 212, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--accent-cyan);
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 24px 0;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .divider span {
-            padding: 0 16px;
-            font-size: 0.85em;
-            color: var(--text-muted);
-        }
-
-        @keyframes fadeInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes fadeInRight {
-            from {
-                opacity: 0;
-                transform: translateX(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            body {
-                flex-direction: column;
-                overflow: auto;
-            }
-
-            .left-section,
-            .right-section {
-                padding: 50px 40px;
-            }
-
-            .welcome-content h2 {
-                font-size: 2.5em;
-            }
-
-            .stats {
-                gap: 25px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .left-section,
-            .right-section {
-                padding: 30px 20px;
-            }
-
-            .welcome-content h2 {
-                font-size: 2em;
-            }
-
-            .welcome-card {
-                padding: 35px 25px;
-            }
-
-            .stats {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .stat-number {
-                font-size: 2em;
-            }
-        }
-    </style>
+    <title>Smart Task Manager - Plan · Prioritize · Ship</title>
+    <link rel="stylesheet" href="{% static 'css/welcome.css' %}">
 </head>
 <body>
-    <div class="left-section">
-        <div class="brand">
-            <div class="logo-text">
-                <div class="logo-icon">S</div>
-                <h1>S T manger</h1>
-            </div>
-            <p class="brand-tagline">Intelligent Task Management System</p>
-        </div>
-
-        <div class="welcome-content">
-            <h2>
-                Manage Your Tasks<br>
-                <span class="gradient-text">Smart & Professional</span>
-            </h2>
-            <p>
-                A complete system for managing and organizing your daily tasks easily and effectively.
-                Track your progress, set your priorities, and achieve your goals in an organized and professional way.
-            </p>
-
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number">98%</div>
-                    <div class="stat-label">User Satisfaction</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">50K+</div>
-                    <div class="stat-label">Tasks Completed</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">24/7</div>
-                    <div class="stat-label">Support</div>
-                </div>
-            </div>
+    <div class="bg-animation">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+        <div class="grid-pattern"></div>
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
         </div>
     </div>
 
-    <div class="right-section">
-        <div class="floating-shapes">
-            <div class="shape"></div>
-            <div class="shape"></div>
+    <nav>
+        <div class="logo-section">
+            <div class="logo">ST</div>
+            <div class="tagline">Plan · Prioritize · Ship</div>
+        </div>
+        <div class="nav-center">
+            <a href="#features">Features</a>
+            <a href="{% url 'team' %}">Team</a>
+            <a href="{% url 'analytics' %}">Analytics</a>
+        </div>
+        <div class="nav-right">
+            <a href="{% url 'login' %}" class="btn btn-login">Login</a>
+            <a href="{% url 'register' %}" class="btn btn-primary">Register</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-badge">
+            <span>✨</span>
+            <span>AI-powered productivity</span>
+        </div>
+        <div class="hero-title-small">Smart Task Manager</div>
+        <h1>Build, plan, and ship<br>with a glassy calm workspace</h1>
+        <p class="subtitle">
+            Stay aligned with tasks, teams, chat, and analytics in one sleek dashboard. Ask the AI assistant, launch projects faster, and keep every signal in one view.
+        </p>
+        <div class="hero-buttons">
+            <a href="{% url 'login' %}" class="btn btn-primary btn-large">Go to dashboard</a>
+            <a href="{% url 'register' %}" class="btn btn-secondary btn-large">Create account</a>
         </div>
 
-        <div class="welcome-card">
-            <div class="card-header">
-                <h3>Start Your Journey Now</h3>
-                <p>Choose how you want to begin</p>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">1.2k</div>
+                <div class="stat-label">Teams shipped with STM</div>
             </div>
-
-            <div class="features-list">
-                <div class="feature-item">
-                    <div class="feature-icon">📋</div>
-                    <div class="feature-info">
-                        <h4>Create Tasks</h4>
-                        <p>Add and categorize your tasks easily</p>
-                    </div>
-                </div>
-
-                <div class="feature-item">
-                    <div class="feature-icon">⚡</div>
-                    <div class="feature-info">
-                        <h4>Track Progress</h4>
-                        <p>Monitor your achievements in real-time</p>
-                    </div>
-                </div>
-
-                <div class="feature-item">
-                    <div class="feature-icon">🎯</div>
-                    <div class="feature-info">
-                        <h4>Set Priorities</h4>
-                        <p>Focus on what matters most first</p>
-                    </div>
-                </div>
+            <div class="stat">
+                <div class="stat-value">+34%</div>
+                <div class="stat-label">Avg. productivity lift</div>
             </div>
-
-            <div class="action-buttons">
-                <a href="/register/" class="btn btn-primary" id="get-started-btn">
-                    <span>Get Started</span>
-                    <span>→</span>
-                </a>
-
-                <div class="divider">
-                    <span>Already have an account?</span>
-                </div>
-
-                <a href="/login/" class="btn btn-secondary">
-                    <span>Sign In</span>
-                </a>
+            <div class="stat">
+                <div class="stat-value">0.6s</div>
+                <div class="stat-label">AI response latency</div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section class="quick-start">
+        <div class="section-label">Quick Start</div>
+        <h2 class="section-title">Everything you need to start</h2>
+        <p class="section-subtitle">Get up and running in minutes with our streamlined onboarding</p>
+
+        <div class="features-pills">
+            <div class="pill">📋 Tasks and projects</div>
+            <div class="pill">💬 AI chat</div>
+            <div class="pill">👥 Team roles</div>
+            <div class="pill">🔔 Notifications</div>
+            <div class="pill">💳 Payments</div>
+            <div class="pill">📊 Audit logs</div>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Sign in</h3>
+                <p class="step-desc">Log in to unlock your personalized dashboard with all your projects and tasks ready.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Invite your team</h3>
+                <p class="step-desc">Share invites and assign roles instantly. Get everyone on the same page in seconds.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Let AI co-pilot</h3>
+                <p class="step-desc">Ask the assistant to plan, summarize, or unblock you. Work smarter, not harder.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-label">Powerful Features</div>
+        <h2 class="section-title">Built for modern teams</h2>
+        <p class="section-subtitle">Everything you need to collaborate, create, and ship faster</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3 class="feature-title">Unified workspace</h3>
+                <p class="feature-desc">Projects, tasks, chat, and analytics in one coherent glass UI so teams stay in sync without context switching.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3 class="feature-title">Live notifications</h3>
+                <p class="feature-desc">Realtime updates for approvals, comments, and assignments so nothing is missed. Stay in the loop effortlessly.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Secure by default</h3>
+                <p class="feature-desc">JWT and CSRF protection, audit trails, and role-aware access for safer collaboration across your organization.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">AI workflows</h3>
+                <p class="feature-desc">Use smart prompts to draft tasks, summarize threads, and prioritize your day with intelligent automation.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="cta-box">
+            <h2>Ready to get to work?</h2>
+            <p>Jump into your dashboard or spin up a new team space in seconds. Experience the future of productivity.</p>
+            <div class="hero-buttons">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-large">Open dashboard</a>
+                <a href="{% url 'register' %}" class="btn btn-secondary btn-large">Invite my team</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="footer-logo">Smart Task Manager</div>
+                <p class="footer-desc">The all-in-one workspace where teams collaborate, AI assists, and projects ship 34% faster.</p>
+            </div>
+            <div class="footer-column">
+                <h4>Product</h4>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#templates">Templates</a>
+                <a href="#updates">Updates</a>
+            </div>
+            <div class="footer-column">
+                <h4>Company</h4>
+                <a href="#about">About</a>
+                <a href="{% url 'team' %}">Team</a>
+                <a href="#careers">Careers</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <div class="footer-column">
+                <h4>Resources</h4>
+                <a href="{% url 'ai-chat' %}">AI Assistant</a>
+                <a href="{% url 'analytics' %}">Analytics</a>
+                <a href="#support">Support</a>
+                <a href="#blog">Blog</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 Smart Task Manager. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script>
-        // Interactive background
-        document.addEventListener('mousemove', (e) => {
-            document.body.style.setProperty('--mouse-x', `${e.clientX}px`);
-            document.body.style.setProperty('--mouse-y', `${e.clientY}px`);
-        });
-
-        // Mouse movement effect for shapes
-        document.addEventListener('mousemove', (e) => {
-            const shapes = document.querySelectorAll('.shape');
-            const mouseX = e.clientX / window.innerWidth;
-            const mouseY = e.clientY / window.innerHeight;
-
-            shapes.forEach((shape, index) => {
-                const speed = (index + 1) * 20;
-                const x = mouseX * speed;
-                const y = mouseY * speed;
-                shape.style.transform = `translate(${x}px, ${y}px)`;
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
-        });
-
-        // Progressive loading effects for features
-        window.addEventListener('load', () => {
-            const features = document.querySelectorAll('.feature-item');
-            features.forEach((feature, index) => {
-                setTimeout(() => {
-                    feature.style.animation = `fadeInRight 0.5s ease-out forwards`;
-                }, index * 100);
-            });
-        });
-
-        // Get Started button animation
-        document.getElementById('get-started-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const btn = this;
-            const originalContent = btn.innerHTML;
-
-            btn.innerHTML = '<span>Loading...</span>';
-            btn.style.pointerEvents = 'none';
-
-            setTimeout(() => {
-                document.body.style.transition = 'opacity 0.5s ease';
-                document.body.style.opacity = '0';
-
-                setTimeout(() => {
-                    window.location.href = "/register/";
-                }, 500);
-            }, 800);
         });
     </script>
 </body>
